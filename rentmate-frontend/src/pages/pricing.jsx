@@ -92,7 +92,7 @@ function Pricing() {
       {/* Header */}
       <div className="container mx-auto text-center py-20 bg-gradient-to-br from-blue-600 to-blue-100 rounded-b-3xl shadow-sm">
         <div className="inline-flex bg-blue-100 px-4 py-1 mt-20 rounded-xl mb-4">
-          <FaBolt className="text-blue-600 mr-2" /> <span>Flexible Pricing</span>
+          <FaBolt className="text-blue-600 mr-2" /> <span className="font-semibold">Flexible Pricing</span>
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-gray-800">
           Flexible Plans for Every Property Owner
@@ -124,7 +124,7 @@ function Pricing() {
               </div>
             )}
 
-            <div className="w-fit mx-auto bg-blue-100 p-4 rounded-lg mb-3">
+            <div className="w-fit mx-auto bg-blue-100 p-4 rounded-lg mb-2 ml-1">
               {plan.icon}
             </div>
             <h2 className="text-2xl font-semibold text-gray-800">{plan.name}</h2>
@@ -250,6 +250,40 @@ function Pricing() {
           </table>
         </div>
       </div>
+      <div className="max-w-3xl mx-auto p-6 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-50 shadow-md">
+        <h4 className="text-3xl text-gray-800 text-center font-bold pt-4">
+          Ready to simplify property management?
+        </h4>
+
+        <p className="text-md text-gray-700 text-center pt-3">
+          Join hundreds of property owners who trust our platform to manage their rentals efficiently.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-4">
+          <div className="flex justify-center">
+            <button className="px-6 py-2 rounded-lg font-semibold bg-green-500 text-white hover:bg-green-600 transition-all duration-200">
+              Start Free Trial
+            </button>
+          </div>
+          <div className="flex justify-center">
+            <a
+              href="https://wa.me/+254790636213"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-2 rounded-lg font-semibold bg-white text-gray-800 border hover:bg-gray-100 transition-all duration-200"
+            >
+              Talk to an Expert
+            </a>
+          </div>
+        </div>
+
+        <ul className="flex flex-wrap gap-4 justify-center mb-4">
+          <li className="text-sm text-gray-600">No credit card required</li>
+          <li className="text-sm text-gray-600">14-day free trial</li>
+          <li className="text-sm text-gray-600">Cancel anytime</li>
+        </ul>
+      </div>
+
     </section>
   );
 }

@@ -86,6 +86,30 @@ function TenantRegistration() {
             </div>
           </div>
 
+          <div>
+            <label htmlFor="" className="block text-md text-black">
+              Apartment Name
+            </label>
+            <input
+              id=""
+              type="text"
+              placeholder="Enter Your Apartment Name"
+              className="w-full rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-400 p-2 text-md"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="" className="block text-md text-black">
+              House Number
+            </label>
+            <input
+              id=""
+              type="number"
+              placeholder="Enter Your House No"
+              className="w-full rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-400 p-2 text-md"
+            />
+          </div>
+
           {/* Password Fields */}
           <div className="relative">
             <FaLock className="absolute left-3 top-3 text-gray-400" />

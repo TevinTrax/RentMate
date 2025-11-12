@@ -22,27 +22,27 @@ function Navbar() {
         {/* Desktop Menu */}
         <ul className="hidden md:flex space-x-6">
           <li>
-            <a href="#" className="text-gray-800 text-base hover:text-blue-500" onClick={()=>navigate("/")}>
+            <a href="#" className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/")}>
               Home
             </a>
           </li>
           <li>
-            <a href="#" className="text-gray-800 text-base hover:text-blue-500" onClick={()=>navigate("/features")}>
+            <a href="#" className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/features")}>
               Features
             </a>
           </li>
           <li>
-            <Link className="text-gray-800 text-base hover:text-blue-500" to={"/pricing"}>
+            <Link className="text-gray-800 text-base hover:text-blue-500 font-semibold" to={"/pricing"}>
               Pricing
             </Link>
           </li>
           <li>
-            <a href="#" className="text-gray-800 text-base hover:text-blue-500">
+            <a href="#" className="text-gray-800 text-base hover:text-blue-500 font-semibold">
               FAQS
             </a>
           </li>
           <li>
-            <a href="#" className="text-gray-800 text-base hover:text-blue-500">
+            <a href="#" className="text-gray-800 text-base hover:text-blue-500 font-semibold">
               Contact
             </a>
           </li>
@@ -83,45 +83,63 @@ function Navbar() {
         <div className="md:hidden bg-white border-t shadow-md">
           <ul className="flex flex-col space-y-2 p-4">
             <li>
-              <a
+              <Link
                 href="#"
-                className="block text-gray-800 text-base hover:text-blue-500"
+                className="block text-gray-800 text-base hover:text-blue-500 font-semibold"
+                to={"/"}
               >
-                Dashboard
-              </a>
+                Home
+              </Link>
             </li>
             <li>
-              <a
+              <Link
                 href="#"
-                className="block text-gray-800 text-base hover:text-blue-500"
+                className="block text-gray-800 text-base hover:text-blue-500 font-semibold"
+                to={"/features"}
               >
-                Properties
-              </a>
+                Features
+              </Link>
             </li>
             <li>
-              <a
+              <Link
                 href="#"
-                className="block text-gray-800 text-base hover:text-blue-500"
+                className="block text-gray-800 text-base hover:text-blue-500 font-semibold"
+                to={"/pricing"}
               >
-                Tenants
-              </a>
+                Pricing
+              </Link>
             </li>
             <li>
-              <a
+              <Link
                 href="#"
-                className="block text-gray-800 text-base hover:text-blue-500"
+                className="block text-gray-800 text-base hover:text-blue-500 font-semibold"
+                to={"/faqs"}
               >
-                Payments
-              </a>
+                FAQS
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="#"
+                className="block text-gray-800 text-base hover:text-blue-500 font-semibold"
+                to={"/contact"}
+              >
+                Contact
+              </Link>
             </li>
 
 
             {/* Actions for mobile */}
-            <div className="flex items-center justify-around mt-4 space-x-2">
-              <div className="h-10 w-10 border hover:bg-orange-400 rounded-xl"></div>
-              <div className="h-10 w-10 border hover:bg-orange-400 rounded-xl"></div>
-              <div className="h-10 w-24 border flex items-center justify-center rounded-xl">
-                Button
+            <div className="container mx-auto  grid grid-cols-2 mt-4 space-x-4">
+              <div className="p-4 flex items-center justify-center">
+                <button className="w-fit h-fit px-6 py-2 text-md font-semibold rounded-lg bg-white hover:bg-gray-200 text-gray-800 border" onClick={()=>navigate("/sign-in")}>
+                  Sign In
+                </button>
+              </div>
+              <div className="p-4 flex items-center justify-center">
+                <button className="w-fit h-fit px-6 py-2 text-md font-semibold rounded-lg bg-blue-500 hover:bg-blue-600 text-white border" onClick={()=>navigate("/get-started")}>
+                  Get Started
+                </button>
               </div>
             </div>
           </ul>
