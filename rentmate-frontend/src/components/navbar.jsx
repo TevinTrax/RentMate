@@ -22,29 +22,29 @@ function Navbar() {
         {/* Desktop Menu */}
         <ul className="hidden md:flex space-x-6">
           <li>
-            <a href="#" className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/")}>
+            <button className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/")}>
               Home
-            </a>
+            </button>
           </li>
           <li>
-            <a href="#" className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/features")}>
+            <button className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/#features")}>
               Features
-            </a>
+            </button>
           </li>
           <li>
-            <Link className="text-gray-800 text-base hover:text-blue-500 font-semibold" to={"/pricing"}>
+            <button className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/pricing")}>
               Pricing
-            </Link>
+            </button>
           </li>
           <li>
-            <a href="#" className="text-gray-800 text-base hover:text-blue-500 font-semibold">
+            <button className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/#faqs")}>
               FAQS
-            </a>
+            </button>
           </li>
           <li>
-            <a href="#" className="text-gray-800 text-base hover:text-blue-500 font-semibold">
+            <button className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/#contact")}>
               Contact
-            </a>
+            </button>
           </li>
         </ul>
 
@@ -52,13 +52,13 @@ function Navbar() {
         <div className="hidden md:flex items-center space-x-4">
            {/* Buttons */}
             <div className="flex space-x-3">
-                <button className="flex items-center px-5 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition" onClick={()=>navigate("/sign-in")}>
+                <button className="flex items-center px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition" onClick={()=>navigate("/sign-in")}>
                     <span className="font-medium text-gray-800">Sign In</span>
                 </button>
 
                 <Link
                   to="/get-started"
-                  className="px-5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium"
+                  className="px-4 py-2 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-xl font-medium"
                 >
                   Get Started
                 </Link>
@@ -84,7 +84,6 @@ function Navbar() {
           <ul className="flex flex-col space-y-2 p-4">
             <li>
               <Link
-                href="#"
                 className="block text-gray-800 text-base hover:text-blue-500 font-semibold"
                 to={"/"}
               >
@@ -93,7 +92,6 @@ function Navbar() {
             </li>
             <li>
               <Link
-                href="#"
                 className="block text-gray-800 text-base hover:text-blue-500 font-semibold"
                 to={"/features"}
               >

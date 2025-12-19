@@ -14,7 +14,7 @@ function Properties() {
             Each property offers modern amenities and professional management.
         </p>
 
-        <div className="container border-2 border-red-500 mt-6">
+        <div className="container mx-auto mt-6">
             <Cards/>
         </div>
         <PropertyNotice/>

@@ -62,7 +62,7 @@ function Features() {
   ];
 
   return (
-    <section className="w-full">
+    <section id="features" className="w-full">
       <div className="container mx-auto p-6">
         <h1 className="max-w-2xl mx-auto text-center text-4xl md:text-5xl p-2 leading-tight tracking-wide font-semibold">
           Everything You Need to{" "}

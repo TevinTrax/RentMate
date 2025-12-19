@@ -2,7 +2,7 @@ import { FaPaperPlane, FaEnvelope, FaPhone, FaMapMarkerAlt } from "react-icons/f
 
 function Contact() {
   return (
-    <section className="w-full py-5 bg-gray-50">
+    <section id="contact" className="w-full py-5 bg-gray-50">
       <div className="container mx-auto px-4">
         <h1 className="text-5xl font-semibold text-center text-gray-800 mb-4">
           Contact Us
@@ -57,7 +57,7 @@ function Contact() {
 
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-200"
+                className="flex items-center gap-2 bg-gradient-to-br from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium"
               >
                 <FaPaperPlane size={16} />
                 Send Message
@@ -66,7 +66,7 @@ function Contact() {
           </div>
 
           {/* Right: Contact Info */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-400 rounded-2xl shadow-md text-white p-10 flex flex-col space-y-4 justify-center">
+          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-md text-white p-10 flex flex-col space-y-4 justify-center">
             <h2 className="text-2xl font-semibold">Get In Touch</h2>
 
             <div className="flex items-start gap-4">

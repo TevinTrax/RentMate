@@ -1,10 +1,12 @@
 import { Phone, Mail, MapPin, ArrowUp, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 import { FaHome } from "react-icons/fa";
 import { Link } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Footer() {
+  const navigate = useNavigate();
   return (
-    <footer className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-200 p-10 mt-12">
+    <footer className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-200 p-10">
       {/* Top Section */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
         
@@ -28,21 +30,45 @@ export default function Footer() {
         {/* Quick Links */}
         <div>
           <h1 className="text-xl font-semibold text-white mb-4">Quick Links</h1>
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Dashboard</a> 
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Properties</a> 
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Tenants</a> 
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Payments</a> 
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Reports</a> 
+          <ul className="space-y-3">
+            <li>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/#features")}>
+                Features
+              </button>
+            </li>
+            <li>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/pricing")}>
+                Pricing
+              </button>
+            </li>
+            <li>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/#faqs")}>
+                FAQS
+              </button>
+            </li>
+          </ul>
         </div>
 
         {/* Resources */}
         <div>
-          <h1 className="text-xl font-semibold text-white mb-4">Resources</h1>
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Blog</a> 
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Help Center</a> 
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Contact Support</a> 
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">API Documentation</a> 
-          <a href="#" className="block text-left text-md text-white/80 hover:text-white mt-2">Status</a>
+          <h1 className="text-xl font-semibold text-white mb-4">Company</h1>
+          <ul className="space-y-3">
+            <li>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/#about")}>
+                About
+              </button>
+            </li>
+            <li>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/#contact")}>
+                Contact
+              </button>
+            </li>
+            <li>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/#support")}>
+                Support
+              </button>
+            </li>
+          </ul>
         </div>
 
         {/* Contact */}

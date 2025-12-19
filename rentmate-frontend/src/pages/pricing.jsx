@@ -6,8 +6,10 @@ import {
   FaUsers,
   FaArrowTrendUp,
 } from "react-icons/fa6";
+import { useNavigate } from "react-router-dom";
 
 function Pricing() {
+  const navigate= useNavigate();
   const plans = [
     {
       name: "Basic",
@@ -88,9 +90,9 @@ function Pricing() {
   ];
 
   return (
-    <section className="w-full bg-gray-50">
+    <section className="w-full bg-gray-50 py-18">
       {/* Header */}
-      <div className="container mx-auto text-center py-20 bg-gradient-to-br from-blue-600 to-blue-100 rounded-b-3xl shadow-sm">
+      <div className="container mx-auto text-center py-16 bg-gradient-to-br from-blue-600 to-blue-100 rounded-b-3xl shadow-sm">
         <div className="inline-flex bg-blue-100 px-4 py-1 mt-20 rounded-xl mb-4">
           <FaBolt className="text-blue-600 mr-2" /> <span className="font-semibold">Flexible Pricing</span>
         </div>
@@ -259,9 +261,9 @@ function Pricing() {
           Join hundreds of property owners who trust our platform to manage their rentals efficiently.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-6 mb-4">
           <div className="flex justify-center">
-            <button className="px-6 py-2 rounded-lg font-semibold bg-green-500 text-white hover:bg-green-600 transition-all duration-200">
+            <button className="px-6 py-2 rounded-lg font-semibold bg-green-500 text-white hover:bg-green-600 transition-all duration-200" onClick={()=>navigate("/free-trial")}>
               Start Free Trial
             </button>
           </div>

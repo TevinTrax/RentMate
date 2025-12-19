@@ -38,7 +38,7 @@ function Cards() {
     <section className="w-full py-10 bg-gray-50">
       <div className="container mx-auto px-6">
         {/* Properties Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 bg-[url('./images/img1.jpg')] bg-cover">
           {properties.map((property, index) => (
             <div
               key={index}
@@ -111,7 +111,7 @@ function Cards() {
 
         {/* View All Button */}
         <div className="text-center mt-10">
-          <button className="flex items-center mx-auto gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+          <button className="flex items-center mx-auto gap-2 bg-gradient-to-r from-blue-600 to-purple-600 font-medium text-white px-6 py-3 rounded-lg">
             View All Properties <FaArrowRight />
           </button>
         </div>

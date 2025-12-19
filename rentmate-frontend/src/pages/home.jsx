@@ -1,6 +1,23 @@
 import {ArrowRight} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 function Home() {
+
+  // Scroll to section if URL contains hash
+  const location = useLocation();
+  useEffect(()=>{
+    if (location.hash) {
+      // Scroll to the element with the ID that matches the hash
+      const element= document.querySelector(location.hash);
+      if (element) {
+        element.scrollIntoView({behavior: 'smooth' });
+      }
+    }
+  }, [location]);
+  const navigate= useNavigate();
   return (
     <section className="w-full pt-24 bg-[linear-gradient(to_right,rgba(255,255,255,0.87),rgba(255,255,255,0.13)),url('./images/img2.jpg')] bg-cover bg-center">
       <div className="container mx-auto p-6">
@@ -26,9 +43,9 @@ function Home() {
 
         {/* Call to Action */}
         <div className="text-center mt-6">
-          <button className="flex items-center justify-center gap-2 bg-blue-600 text-white px-10 py-3 rounded-lg font-medium hover:bg-blue-700 transition min-w-[250px] w-full sm:w-auto">
+          <button className="flex items-center justify-center gap-2 bg-gradient-to-br from-blue-600 to-purple-500 text-white px-10 py-3 rounded-lg font-medium hover:bg-blue-700 transition min-w-[250px] w-full sm:w-auto" onClick={()=> navigate("/free-trial")}>
             Start Free Trial
-            <ArrowRight size={20} />
+            <ArrowRight size={20} className="font-semibold" />
           </button>
         </div>
 
