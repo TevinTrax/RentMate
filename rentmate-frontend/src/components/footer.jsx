@@ -6,13 +6,13 @@ import { useNavigate } from "react-router-dom";
 export default function Footer() {
   const navigate = useNavigate();
   return (
-    <footer className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-200 p-10">
+    <footer className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-200 p-8">
       {/* Top Section */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-5 md:gap-10 mb-10">
         
         {/* About */}
         <div>
-          <h1 className="flex items-center text-3xl font-bold text-white mb-4"><FaHome className="text-white mr-2"/>RentMate</h1>
+          <h1 className="flex items-center text-2xl md:text-3xl font-bold text-white mb-2 md:mb-4"><FaHome className="text-white mr-2"/>RentMate</h1>
           <p className="text-white/80 text-md leading-relaxed">
             Simplifying property management with innovative solutions 
             for landlords, tenants, and property managers worldwide.
@@ -29,8 +29,8 @@ export default function Footer() {
 
         {/* Quick Links */}
         <div>
-          <h1 className="text-xl font-semibold text-white mb-4">Quick Links</h1>
-          <ul className="space-y-3">
+          <h1 className="text-lg md:text-xl font-semibold text-white mb-2 md:mb-4">Quick Links</h1>
+          <ul className="space-y-1 md:space-y-3">
             <li>
               <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/#features")}>
                 Features
@@ -51,10 +51,10 @@ export default function Footer() {
 
         {/* Resources */}
         <div>
-          <h1 className="text-xl font-semibold text-white mb-4">Company</h1>
-          <ul className="space-y-3">
+          <h1 className="text-lg md:text-xl font-semibold text-white mb-2 md:mb-4">Company</h1>
+          <ul className="space-y-1 md:space-y-3">
             <li>
-              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/#about")}>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/aboutus")}>
                 About
               </button>
             </li>
@@ -64,7 +64,7 @@ export default function Footer() {
               </button>
             </li>
             <li>
-              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/#support")}>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/support")}>
                 Support
               </button>
             </li>
@@ -73,7 +73,7 @@ export default function Footer() {
 
         {/* Contact */}
         <div>
-          <h1 className="text-xl font-semibold text-white mb-4">Contact Us</h1>
+          <h1 className="text-lg md:text-xl font-semibold text-white mb-4">Contact Us</h1>
           <div className="flex items-center gap-2 text-white/80 text-md mt-2">
             <MapPin size={16} /> Nairobi, Zimmerman
           </div>
