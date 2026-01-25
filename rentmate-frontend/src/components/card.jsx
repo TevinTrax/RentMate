@@ -65,8 +65,8 @@ function Cards() {
 
               {/* Bottom Section */}
               <div className="p-4 space-y-3">
-                <h3 className="text-xl font-semibold text-gray-900">{property.name}</h3>
-                <p className="text-gray-600 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
+                <p className="text-gray-600 text-md flex items-center gap-2">
                   <FaLocationDot className="text-blue-500" /> {property.location}
                 </p>
 
@@ -96,8 +96,8 @@ function Cards() {
                 </div>
 
                 {/* Buttons */}
-                <div className="flex justify-between mt-4">
-                  <button className="border border-blue-600 text-blue-600 px-4 py-1 rounded-lg hover:bg-blue-500 hover:text-white transition">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-4">
+                  <button className="border border-blue-600 text-blue-600 mb-2 px-4 py-1 rounded-lg hover:bg-blue-500 hover:text-white transition">
                     View Details
                   </button>
                   <button className="bg-blue-600 text-white px-4 py-1 rounded-lg hover:bg-blue-700 transition">

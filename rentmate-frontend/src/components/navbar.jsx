@@ -11,7 +11,7 @@ function Navbar() {
   const navigate= useNavigate();
 
   return (
-    <nav className="w-full z-50 bg-white shadow-md fixed top-0">
+    <nav className="w-full z-50 bg-white fixed top-0">
       <div className="container mx-auto flex items-center justify-between p-4">
         {/* Logo */}
         <h1 className="flex items-center text-black text-2xl md:text-3xl font-bold">
@@ -37,7 +37,7 @@ function Navbar() {
             </button>
           </li>
           <li>
-            <button className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/#faqs")}>
+            <button className="text-gray-800 text-base hover:text-blue-500 font-semibold" onClick={()=>navigate("/faqs")}>
               FAQS
             </button>
           </li>
@@ -127,14 +127,14 @@ function Navbar() {
 
 
             {/* Actions for mobile */}
-            <div className="container mx-auto  grid grid-cols-2 mt-4 space-x-4">
+            <div className="container mx-auto  grid grid-cols-1 md:grid-cols-2 mt-4 space-x-2">
               <div className="p-4 flex items-center justify-center">
-                <button className="w-fit h-fit px-6 py-2 text-md font-semibold rounded-lg bg-white hover:bg-gray-200 text-gray-800 border" onClick={()=>navigate("/sign-in")}>
+                <button className="w-full md:w-fit px-6 py-2 text-sm md:text-md font-semibold rounded-lg bg-white hover:bg-gray-200 text-gray-800 border" onClick={()=>navigate("/sign-in")}>
                   Sign In
                 </button>
               </div>
               <div className="p-4 flex items-center justify-center">
-                <button className="w-fit h-fit px-6 py-2 text-md font-semibold rounded-lg bg-blue-500 hover:bg-blue-600 text-white border" onClick={()=>navigate("/get-started")}>
+                <button className="w-full md:w-fit px-6 py-2 text-sm md:text-md font-semibold rounded-lg bg-blue-500 hover:bg-blue-600 text-white border" onClick={()=>navigate("/get-started")}>
                   Get Started
                 </button>
               </div>

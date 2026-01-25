@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.8",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
