@@ -1,5 +1,5 @@
 import { Phone, Mail, MapPin, ArrowUp, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
-import { FaHome } from "react-icons/fa";
+import { Building2 } from "lucide-react";
 import { Link } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -12,7 +12,7 @@ export default function Footer() {
         
         {/* About */}
         <div>
-          <h1 className="flex items-center text-2xl md:text-3xl font-bold text-white mb-2 md:mb-4"><FaHome className="text-white mr-2"/>RentMate</h1>
+          <h1 className="flex items-center text-2xl md:text-3xl font-bold text-white mb-2 md:mb-4"><Building2 className="text-white mr-2" size={28} />RentMate</h1>
           <p className="text-white/80 text-md leading-relaxed">
             Simplifying property management with innovative solutions 
             for landlords, tenants, and property managers worldwide.

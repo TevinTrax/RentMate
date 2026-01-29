@@ -37,9 +37,13 @@ import TenantRegistration from "./pages/authentication/TenantRegistration.jsx";
    ADMIN PAGES
 ======================= */
 import AdminDashboard from "./pages/admin/Dashboard.jsx";
-// import AdminUsers from "./pages/admin/Users.jsx";
-// import AdminProperties from "./pages/admin/Properties.jsx";
-// import AdminPayments from "./pages/admin/Payments.jsx";
+import AdminUsers from "./pages/admin/Users.jsx";
+import AdminProperties from "./pages/admin/Properties.jsx";
+import AdminPayments from "./pages/admin/Payments.jsx";
+import AdminPaymentsReports from "./pages/admin/PaymentReports.jsx";
+import AdminPaymentsTransactions from "./pages/admin/Transactions.jsx";
+import AdminPackageSubscriptions from "./pages/admin/Subscriptions.jsx";
+import AdminPaymentsFeesDiscounts from "./pages/admin/FeesDiscounts.jsx";
 // import AdminReports from "./pages/admin/Reports.jsx";
 // import AdminSettings from "./pages/admin/Settings.jsx";
 
@@ -89,7 +93,7 @@ function App() {
               <Route path="/sign-in" element={<SignIn />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/get-started" element={<GetStarted />} />
-              <Route path="/register/admin" element={<AdminRegistration />} />
+              <Route path="/register/:role" element={<AdminRegistration />} />
               <Route path="/register/landlord" element={<LandlordRegistration />} />
               <Route path="/register/tenant" element={<TenantRegistration />} />
             </Route>
@@ -97,11 +101,15 @@ function App() {
             {/* ========= ADMIN ROUTES ========= */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              {/* <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/properties" element={<AdminProperties />} />
-              <Route path="/admin/payments" element={<AdminPayments />} />
-              <Route path="/admin/reports" element={<AdminReports />} />
-              <Route path="/admin/settings" element={<AdminSettings />} /> */}
+              <Route path="/admin/payments" element={<AdminPayments />}>
+                <Route path="/admin/payments/transactions" element={<AdminPaymentsTransactions />} />
+                <Route path="/admin/payments/package-subscriptions" element={<AdminPackageSubscriptions />} /> 
+                <Route path="/admin/payments/payment-reports" element={<AdminPaymentsReports />} />
+                <Route path="/admin/payments/fees-discounts" element={<AdminPaymentsFeesDiscounts />} />
+                {/* <Route path="/admin/payments/audit-logs" element={<AdminPaymentsAuditLogs />} /> */}
+              </Route>
             </Route>
 
             {/* ========= LANDLORD ROUTES ========= */}

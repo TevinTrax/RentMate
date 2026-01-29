@@ -1,8 +1,9 @@
 
 import { useState } from "react";
-import { FaUser, FaHome } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { Building2 } from "lucide-react";
 
 
 
@@ -15,7 +16,7 @@ function Navbar() {
       <div className="container mx-auto flex items-center justify-between p-4">
         {/* Logo */}
         <h1 className="flex items-center text-black text-2xl md:text-3xl font-bold">
-        <FaHome className="text-blue-600 mr-2" />
+        <Building2 className="text-blue-600 mr-2" size={28} />
         RentMate
         </h1>
 

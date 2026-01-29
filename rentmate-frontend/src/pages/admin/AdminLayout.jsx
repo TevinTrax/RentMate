@@ -1,57 +1,106 @@
-import { Outlet } from "react-router-dom";
-import { Home, Users, Building, CreditCard, FileText, Settings,User } from "lucide-react";
+import { Outlet, NavLink } from "react-router-dom";
+import {
+  Home,
+  Users,
+  Building2,
+  CreditCard,
+  FileText,
+  Settings,
+  User,
+  LogOut,
+  Bell,
+} from "lucide-react";
+import AdminNavbar from "./AdminNavbar";
+
+const navLinkClass = ({ isActive }) =>
+  `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-semibold transition
+   ${
+     isActive
+       ? "bg-blue-500 text-white shadow-md"
+       : "text-gray-700 hover:bg-blue-100 hover:text-blue-600"
+   }`;
 
 function AdminLayout() {
   return (
-    <div className="min-h-screen flex">
+    <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-50 text-gray-800 border-2 border-gray-200">
-        <div className="p-8 border-b-2 border-gray-200">
-            <h2 className="text-2xl font-bold text-blue-500">Rentmate</h2>
-            <p className="text-md text-gray-700">Admin Dashboard</p>
+      <aside className="fixed flex h-screen w-64 flex-col border-r border-gray-200 bg-gray-50">
+        {/* Brand */}
+        <div className="border-b border-gray-200 p-8">
+          <h2 className="flex items-center text-2xl font-bold text-blue-500">
+            <Building2 className="mr-2" size={24} />
+            RentMate
+          </h2>
+          <p className="text-sm text-gray-600">Admin Dashboard</p>
         </div>
 
-        <nav className="flex-grow space-y-4 p-6 py-8 border-b-2 border-gray-200 text-md font-bold">
-          <a href="/admin/dashboard" className="block text-gray-50 bg-blue-500 px-4 py-2 rounded-lg shadow-md">
-            <Home className="inline-block mr-2" size={20} />
+        {/* Navigation */}
+        <nav className="flex-1 space-y-2 overflow-y-auto p-4">
+          <NavLink to="/admin/dashboard" className={navLinkClass}>
+            <Home size={18} />
             Dashboard
-          </a>
-          <a href="/admin/users" className="block hover:text-blue-500 hover:bg-blue-100 px-4 py-2 rounded-lg">
-            <Users className="inline-block mr-2" size={20} />
+          </NavLink>
+
+          <NavLink to="/admin/users" className={navLinkClass}>
+            <Users size={18} />
             Users
-          </a>
-          <a href="/admin/properties" className="block hover:text-blue-500 hover:bg-blue-100 px-4 py-2 rounded-lg">
-            <Building className="inline-block mr-2" size={20} />
+          </NavLink>
+
+          <NavLink to="/admin/properties" className={navLinkClass}>
+            <Building2 size={18} />
             Properties
-          </a>
-          <a href="/admin/payments" className="block hover:text-blue-500 hover:bg-blue-100 px-4 py-2 rounded-lg">
-            <CreditCard className="inline-block mr-2" size={20} />
+          </NavLink>
+
+          <NavLink to="/admin/payments" className={navLinkClass}>
+            <CreditCard size={18} />
             Payments
-          </a>
-            <a href="/admin/reports" className="block hover:text-blue-500 hover:bg-blue-100 px-4 py-2 rounded-lg">
-            <FileText className="inline-block mr-2" size={20} />
+          </NavLink>
+
+          <NavLink to="/admin/reports" className={navLinkClass}>
+            <FileText size={18} />
             Reports
-            </a>
-            <a href="/admin/settings" className="block hover:text-blue-500 hover:bg-blue-100 px-4 py-2 rounded-lg">
-            <Settings className="inline-block mr-2" size={20} />
+          </NavLink>
+
+          <NavLink to="/admin/notifications" className={navLinkClass}>
+            <Bell size={18} />
+            Notifications
+          </NavLink>
+
+          <NavLink to="/admin/settings" className={navLinkClass}>
+            <Settings size={18} />
             Settings
-            </a>
+          </NavLink>
         </nav>
-        <div className="flex items-center p-4 border-t border-gray-200">
-          <div className="h-14 w-14 rounded-full bg-gray-300 flex items-center justify-center">
-            <User size={28} className="text-gray-500" />
+
+        {/* User Info */}
+        <div className="border-t border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-300">
+              <User size={22} className="text-gray-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Admin User</p>
+              <p className="text-xs text-gray-600 truncate">
+                adminuser@gmail.com
+              </p>
+            </div>
           </div>
-          <div className="flex-1 ml-2">
-            <h1 className="text-md font-bold">Admin User</h1>
-            <a href="mailto:adminuser@gmail.com" className="text-sm text-gray-700">
-              adminuser@gmail.com
-            </a>
-          </div>
+
+          {/* Logout */}
+          <button
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg
+                       px-4 py-2 text-sm font-semibold text-red-600 transition
+                       hover:bg-red-100 hover:text-red-700"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
         </div>
       </aside>
 
-      {/* Page Content */}
-      <main className="flex-1 bg-gray-100 p-6">
+      {/* Main Content */}
+      <main className="ml-64 flex flex-1 flex-col">
+        <AdminNavbar />
         <Outlet />
       </main>
     </div>
