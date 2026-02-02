@@ -1,10 +1,10 @@
-import { pool } from "../config/db.js";
+import pool from "../config/db.js";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 
 dotenv.config();
 
-export const createUser = async (req, res) => {
+export const createUserAdmin = async (req, res) => {
   try {
     const {
       full_name,
@@ -49,7 +49,7 @@ export const createUser = async (req, res) => {
     const result = await pool.query(
       `
       INSERT INTO users
-      (full_name, role, email, id_number, phone_number, alt_phone_number, password_hash)
+      (full_name, role, email, phone_number, alt_phone_number, id_number, password_hash)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id, full_name, email, role
       `,
@@ -57,15 +57,15 @@ export const createUser = async (req, res) => {
         full_name,
         role || "user", // default role if missing
         email,
-        id_number,
         phone_number,
         alt_phone_number,
+        id_number,
         hashedPassword,
       ]
     );
 
     // 5. Response
-    res.status(201).json({
+    return res.status(201).json({
       message: "Account created successfully",
       user: result.rows[0],
     });
@@ -76,4 +76,75 @@ export const createUser = async (req, res) => {
       error: "Internal server error",
     });
   }
+};
+
+
+
+export const createUserLandlord = async(req,res)=>{
+    try {
+        const {
+            full_name,
+            email,
+            role,
+            id_number,
+            phone_number,
+            alt_phone_number,
+            password
+        } = req.body
+
+        // validation
+        if (
+            !full_name ||
+            !email ||
+            !phone_number ||
+            !password ||
+            !id_number
+        ) {
+            return res.status(400).json({
+                error:"All required fields must be filled"
+            });
+        }
+
+        // check if email already exists
+        const emailCheck = await pool.query(
+            "SELECT id FROM users WHERE email=$1",
+            [email]
+        );
+        if (emailCheck.rows.length > 0) {
+            return res.status(409).json({
+                error:"Email already registered",
+            });
+        }
+
+        // hash password
+        const saltRounds= 10;
+        const hashedPassword = await bcrypt.hash(password,saltRounds);
+
+        // insert data into db
+        const result= await pool.query(
+            `INSERT INTO users (full_name, role, email, phone_number, alt_phone_number, id_number, password_hash)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, full_name, role, email, phone_number`,
+            [
+                full_name,
+                role || "user",
+                email,
+                phone_number,
+                alt_phone_number,
+                id_number,
+                hashedPassword
+            ]
+        );
+
+        // response
+        return res.status(201).json({
+            message:"Account created successfully",
+            user: result.rows[0],
+        });
+    } catch (error) {
+        console.error("Create user error:", error.message);
+        res.status(500).json({
+            error:"Internal server error"
+        });
+    }
 };

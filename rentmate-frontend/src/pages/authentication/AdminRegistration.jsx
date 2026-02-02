@@ -34,13 +34,10 @@ function AdminRegistration() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Password:", formData.password);
-console.log("Confirm Password:", formData.confirmPassword);
-
-if (formData.password.trim() !== formData.confirmPassword.trim()) {
-  alert("Passwords do not match!");
-  return;
-}
+    if (formData.password.trim() !== formData.confirmPassword.trim()) {
+      alert("Passwords do not match!");
+      return;
+    }
 
 
     try {
@@ -55,7 +52,7 @@ if (formData.password.trim() !== formData.confirmPassword.trim()) {
         password,
       } = formData;
 
-      const response = await fetch("http://localhost:5000/api/users", {
+      const response = await fetch("http://localhost:5000/api/users/admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,9 +61,9 @@ if (formData.password.trim() !== formData.confirmPassword.trim()) {
           full_name,
           role,
           email,
-          id_number,
           phone_number,
           alt_phone_number,
+          id_number,
           password,
         }),
       });
