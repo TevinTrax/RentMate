@@ -27,7 +27,7 @@ function FreeTrial() {
 
         {/* Form */}
         <div className="p-3 md:p-6">
-          <form className="space-y-4 p-6 md:p-8 mt-3 md:mt-6 bg-white rounded-xl shadow-lg border">
+          <form className="space-y-4 p-6 md:p-8 mt-3 md:mt-6 bg-white rounded-xl shadow-lg border" onSubmit={handleSubmit}>
 
             {/* Full Name */}
             <div>
@@ -37,11 +37,13 @@ function FreeTrial() {
               <div className="relative mt-1">
                 <FaUser className="absolute left-3 top-3 text-gray-400" />
                 <input
-                  id="name"
+                  id="full_name"
                   name="name"
                   type="text"
                   placeholder="Enter your full name"
+                  value={formData.full_name}
                   className="w-full pl-10 p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={handleChange}
                   required
                 />
               </div>

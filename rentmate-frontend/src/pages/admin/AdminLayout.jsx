@@ -11,6 +11,7 @@ import {
   Bell,
 } from "lucide-react";
 import AdminNavbar from "./AdminNavbar";
+import { useNavigate } from "react-router-dom";
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-semibold transition
@@ -21,6 +22,17 @@ const navLinkClass = ({ isActive }) =>
    }`;
 
 function AdminLayout() {
+  const navigate= useNavigate();
+
+  const handleLogout= ()=>{
+    // remove the token and role from localstorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+
+    // redirect user to sign in page
+    navigate("/sign-in")
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
@@ -91,6 +103,7 @@ function AdminLayout() {
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg
                        px-4 py-2 text-sm font-semibold text-red-600 transition
                        hover:bg-red-100 hover:text-red-700"
+                       onClick={handleLogout}
           >
             <LogOut size={18} />
             Logout

@@ -16,6 +16,7 @@ function LandlordRegistration() {
     alt_phone_number:"",
     password:"",
     confirmPassword:"",
+    ref:"",
   });
 
   // update role in formData if URL param changes (unlikely but safe)
@@ -48,7 +49,8 @@ function LandlordRegistration() {
         id_number,
         phone_number,
         alt_phone_number,
-        password
+        password,
+        ref,
       }= formData;
 
       const response= await fetch ("http://localhost:5000/api/users/landlord",{
@@ -63,7 +65,8 @@ function LandlordRegistration() {
           id_number,
           phone_number,
           alt_phone_number,
-          password
+          password,
+          ref
         })
       });
 
@@ -220,11 +223,11 @@ function LandlordRegistration() {
               How did you hear about us?
             </label>
             <input
-              id=""
+              id="ref"
               type="text"
               placeholder="How did you hear about us?"
-              // value={formData.ref}
-              // onChange={handleChange}
+              value={formData.ref}
+              onChange={handleChange}
               className="w-full rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-400 p-2 text-sm md:text-md"
             />
           </div>
