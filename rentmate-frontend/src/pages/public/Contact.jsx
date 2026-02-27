@@ -15,14 +15,25 @@ function Contact() {
           {/* Left: Contact Form */}
           <div className="bg-white rounded-2xl shadow-md p-8">
             <form className="space-y-4">
-              <div>
-                <label className="block text-md text-gray-800 pb-2">Full Name</label>
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  className="w-full text-md rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-md text-gray-800 pb-2">First Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your first name"
+                    className="w-full text-md rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-md text-gray-800 pb-2">Last Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your last name"
+                    className="w-full text-md rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
               </div>
 
               <div>

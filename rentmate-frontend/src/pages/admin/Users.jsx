@@ -37,6 +37,28 @@ function AdminUsers() {
 
   const [showVerifyModal, setShowVerifyModal]= useState(false);
 
+  // pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
+
+  // calculate which users to show
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+
+  const totalPages = Math.ceil(users.length / usersPerPage);
+
+
+
+  /* ✅ EDIT FORM STATE (CRITICAL FIX) */
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [altPhone, setAltPhone] = useState("");
+  const [role, setRole] = useState("");
+  const [status, setStatus] = useState("");
+
   /* ---------------- FETCH USERS ---------------- */
   useEffect(() => {
     const fetchUsers = async () => {
@@ -71,6 +93,23 @@ function AdminUsers() {
   const toggleMenu = (id) => {
     setOpenMenuId((prev) => (prev === id ? null : id));
   };
+
+
+  /*  OPEN EDIT MODAL WITH PREFILLED DATA */
+  const openEditModal = (user) => {
+    setSelectedUser(user);
+
+    setFirstName(user.first_name || "");
+    setLastName(user.last_name || "");
+    setPhone(user.phone_number || "");
+    setAltPhone(user.alt_phone_number || "");
+    setRole(user.role || "");
+    setStatus(user.status || "");
+
+    setShowEditModal(true);
+    setOpenMenuId(null);
+  };
+
 
   return (
     <section className="w-full p-4">
@@ -152,7 +191,7 @@ function AdminUsers() {
             <div className="flex-1">
               <p className="text-gray-600">Pending Approval</p>
               <h2 className="py-1 text-2xl font-bold text-gray-800">
-                <CountUp end={users.filter((u)=> u.status==="Pending")} duration={2} />
+                <CountUp end={users.filter((u)=> u.status==="Pending").length} duration={2} />
               </h2>
             </div>
           </div>
@@ -188,10 +227,10 @@ function AdminUsers() {
                 </tr>
               </thead>
 
-              <tbody>
-                {users.map((user, index) => (
-                  <tr key={user.email} className="hover:bg-gray-50 text-sm">
-                    <td className="p-3">{index + 1}</td>
+              <tbody className="">
+                {currentUsers.map((user, index) =>  (
+                  <tr key={user.email} className="hover:bg-gray-50 py-1 text-sm border-b border-gray-200">
+                    <td className="p-3">{indexOfFirstUser + index + 1}</td>
                     <td className="p-3">{user.first_name} {user.last_name}</td>
                     <td className="p-3">{user.email}</td>
                     <td className="p-3">{user.phone_number}</td>
@@ -226,7 +265,7 @@ function AdminUsers() {
                           e.stopPropagation();
                           toggleMenu(user.email);
                         }}
-                        className="rounded p-1 hover:bg-gray-100"
+                        className="rounded p-1 hover:bg-gray-200"
                       >
                         <MoreHorizontal size={18} />
                       </button>
@@ -274,6 +313,7 @@ function AdminUsers() {
                             onClick={() => {
                               setSelectedUser(user);
                               setShowEditModal(true);
+                              openEditModal(user);
                               setOpenMenuId(null);
                             }}
                             className="flex w-full items-center gap-2 px-4 py-2 text-orange-600 hover:bg-orange-50"
@@ -291,6 +331,43 @@ function AdminUsers() {
                 ))}
               </tbody>
             </table>
+
+            {/* pagination UI */}
+            <div className="flex justify-center items-center gap-2 p-4 border-t">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200"
+              >
+                Prev
+              </button>
+
+              {[...Array(totalPages)].map((_, i) => {
+                const page = i + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === page
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 hover:bg-gray-200"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200"
+              >
+                Next
+              </button>
+            </div>
+
 
             {/* view details modal */}
             {showDetailsModal && selectedUser && (
@@ -346,42 +423,99 @@ function AdminUsers() {
             {/* edit modal */}
             {showEditModal && selectedUser && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div className="bg-white rounded-xl shadow-xl w-[90%] max-w-lg p-6
-                                transform transition-all duration-300">
+                <div className="bg-white rounded-xl shadow-xl w-[90%] max-w-lg p-6">
 
-                  <h2 className="text-xl font-bold mb-4">Edit User</h2>
+                  <h2 className="text-xl font-bold mb-4 text-blue-600">
+                    Edit User
+                  </h2>
 
-                  <div className="space-y-3">
-                    <input
-                      defaultValue={selectedUser.full_name}
-                      className="w-full border rounded-lg px-3 py-2"
-                    />
-                    <input
-                      defaultValue={selectedUser.email}
-                      className="w-full border rounded-lg px-3 py-2"
-                    />
-                    <select
-                      defaultValue={selectedUser.role}
-                      className="w-full border rounded-lg px-3 py-2"
-                    >
-                      <option value="Tenant">Tenant</option>
-                      <option value="Landlord">Landlord</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                  <div className="grid grid-cols-2 gap-3">
+
+                    <div>
+                      <label>First Name</label>
+                      <input
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full border rounded p-2"
+                      />
+                    </div>
+
+                    <div>
+                      <label>Last Name</label>
+                      <input
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full border rounded p-2"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <label>Email</label>
+                      <input
+                        value={selectedUser.email}
+                        disabled
+                        className="w-full border rounded p-2 bg-gray-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label>Phone</label>
+                      <input
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full border rounded p-2"
+                      />
+                    </div>
+
+                    <div>
+                      <label>Alt Phone</label>
+                      <input
+                        value={altPhone}
+                        onChange={(e) => setAltPhone(e.target.value)}
+                        className="w-full border rounded p-2"
+                      />
+                    </div>
+
+                    <div>
+                      <label>Role</label>
+                      <select
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        className="w-full border rounded p-2"
+                      >
+                        <option value="tenant">Tenant</option>
+                        <option value="landlord">Landlord</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label>Status</label>
+                      <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="w-full border rounded p-2"
+                      >
+                        <option>Active</option>
+                        <option>Pending</option>
+                        <option>Suspended</option>
+                        <option>Verified</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="flex justify-end gap-3 mt-6">
                     <button
                       onClick={() => setShowEditModal(false)}
-                      className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
+                      className="px-4 py-2 rounded-lg bg-gray-100"
                     >
                       Cancel
                     </button>
-                    <button className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+
+                    <button className="px-4 py-2 rounded-lg bg-blue-600 text-white">
                       Save Changes
                     </button>
                   </div>
-
                 </div>
               </div>
             )}

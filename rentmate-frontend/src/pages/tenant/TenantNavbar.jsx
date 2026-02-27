@@ -1,0 +1,40 @@
+import { Bell, Search } from "lucide-react";
+
+function TenantNavbar() {
+    return(
+        <nav className="flex items-center justify-between p-4 bg-white border-b border-gray-200 fixed z-50 top-0 left-72 right-0">
+            {/* Search */}
+            <form>
+                <div className="relative">
+                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search anything..."
+                        className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+                    />
+                </div>
+            </form>
+
+            {/* Right Section */}
+            <div className="flex items-center gap-4">
+                
+                {/* Notification */}
+                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-100 transition">
+                    <Bell size={18} />
+                </button>
+
+                {/* User */}
+                <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+                    <h1 className="text-gray-800 text-sm font-semibold">
+                        Echakara Tevin
+                    </h1>
+                </div>
+
+            </div>
+        </nav>
+
+    );
+}
+
+export default TenantNavbar;

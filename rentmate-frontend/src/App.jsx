@@ -21,7 +21,7 @@ import Advert from "./pages/public/Advert.jsx";
 import Support from "./pages/public/Support.jsx";
 import Faqs from "./pages/public/Faqs.jsx";
 import Checkout from "./pages/public/Checkout.jsx";
-import FreeTrial from "./pages/public/FreeTrial.jsx";
+import FreeTrial from "./pages/authentication/FreeTrial.jsx";
 
 /* =======================
    AUTHENTICATION PAGES
@@ -50,22 +50,28 @@ import AdminPaymentsFeesDiscounts from "./pages/admin/FeesDiscounts.jsx";
 // /* =======================
 //    LANDLORD PAGES
 // ======================= */
-// import LandlordDashboard from "./pages/landlord/Dashboard.jsx";
-// import LandlordProperties from "./pages/landlord/Properties.jsx";
+import LandlordLayout from "./pages/landlord/LandlordLayout.jsx";
+import LandlordDashboard from "./pages/landlord/Dashboard.jsx";
+import LandlordUsers from "./pages/landlord/Users.jsx";
+import LandlordProperties from "./pages/landlord/Properties.jsx";
 // import LandlordTenants from "./pages/landlord/Tenants.jsx";
 // import LandlordMaintenance from "./pages/landlord/Maintenance.jsx";
-// import LandlordPayments from "./pages/landlord/Payments.jsx";
+import LandlordPayments from "./pages/landlord/Payments.jsx";
 // import LandlordReports from "./pages/landlord/Reports.jsx";
 // import LandlordSettings from "./pages/landlord/Settings.jsx";   
 
 // /* =======================
 //    TENANT PAGES
 // ======================= */
-// import TenantDashboard from "./pages/tenant/Dashboard.jsx";
+import TenantLayout from "./pages/tenant/TenantLayout.jsx";
+import TenantDashboard from "./pages/tenant/Dashboard.jsx";
 // import TenantApartment from "./pages/tenant/Apartment.jsx";
-// import TenantMaintenance from "./pages/tenant/Maintenance.jsx";
-// import TenantPayments from "./pages/tenant/Payments.jsx";
+import TenantMaintenance from "./pages/tenant/Maintenance.jsx";
+import TenantPayments from "./pages/tenant/Payments.jsx";
 // import TenantSettings from "./pages/tenant/Settings.jsx";
+import LeaseDocuments from "./pages/tenant/LeaseDocuments.jsx";
+import TenantNotifications from "./pages/tenant/Notifications.jsx";
+import TenantMessages from "./pages/tenant/Messages.jsx";
 
 function App() {
   return (
@@ -113,20 +119,28 @@ function App() {
             </Route>
 
             {/* ========= LANDLORD ROUTES ========= */}
-            {/* <Route path="/landlord/dashboard" element={<LandlordDashboard />} />
-            <Route path="/landlord/properties" element={<LandlordProperties />} />
-            <Route path="/landlord/tenants" element={<LandlordTenants />} />
-            <Route path="/landlord/maintenance" element={<LandlordMaintenance />} />
-            <Route path="/landlord/payments" element={<LandlordPayments />} />
-            <Route path="/landlord/reports" element={<LandlordReports />} />
-            <Route path="/landlord/settings" element={<LandlordSettings />} /> */}
+            <Route path="/landlord" element={<LandlordLayout/>}>
+              <Route path="/landlord/dashboard" element={<LandlordDashboard />} />
+              <Route path="/landlord/users" element={<LandlordUsers/>}/>
+              <Route path="/landlord/properties" element={<LandlordProperties />} />
+              {/* <Route path="/landlord/tenants" element={<LandlordTenants />} /> */}
+              {/* <Route path="/landlord/maintenance" element={<LandlordMaintenance />} /> */}
+              <Route path="/landlord/payments" element={<LandlordPayments />} />
+              {/* <Route path="/landlord/reports" element={<LandlordReports />} />
+              <Route path="/landlord/settings" element={<LandlordSettings />} />  */}
+            </Route>
 
             {/* ========= TENANT ROUTES ========= */}
-            {/* <Route path="/tenant/dashboard" element={<TenantDashboard />} />
-            <Route path="/tenant/apartment" element={<TenantApartment />} />
-            <Route path="/tenant/maintenance" element={<TenantMaintenance />} />
-            <Route path="/tenant/payments" element={<TenantPayments />} />
-            <Route path="/tenant/settings" element={<TenantSettings />} /> */}
+            <Route path="/tenant" element={<TenantLayout/>}>
+              <Route path="/tenant/dashboard" element={<TenantDashboard />} />
+              {/* <Route path="/tenant/apartment" element={<TenantApartment />} /> */}
+              <Route path="/tenant/maintenance" element={<TenantMaintenance />} />
+              <Route path="/tenant/lease-documents" element={<LeaseDocuments/>}/>
+              <Route path="/tenant/payments" element={<TenantPayments />} />
+              <Route path="/tenant/messages" element={<TenantMessages/>}/>
+              {/* <Route path="/tenant/settings" element={<TenantSettings />} /> */}
+              <Route path="/tenant/notifications" element={<TenantNotifications/>}/>
+            </Route>
           </Routes>
     </>
   );

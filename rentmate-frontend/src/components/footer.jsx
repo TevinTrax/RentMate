@@ -54,7 +54,7 @@ export default function Footer() {
           <h1 className="text-lg md:text-xl font-semibold text-white mb-2 md:mb-4">Company</h1>
           <ul className="space-y-1 md:space-y-3">
             <li>
-              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/aboutus")}>
+              <button className="text-left text-md text-white/80 hover:text-white" onClick={()=>navigate("/about")}>
                 About
               </button>
             </li>
