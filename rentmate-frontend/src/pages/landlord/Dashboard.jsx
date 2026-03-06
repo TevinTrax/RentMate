@@ -1,7 +1,34 @@
 import CountUp from "react-countup";
 import { TrendingDown, TrendingUp, Wallet2, Users, AlertTriangle, Building2, Clock, Home, FileText, UserPlus2, Bell } from "lucide-react";
+import { useEffect, useState } from "react";
 
 function LandlordDashboard() {
+
+    // fetch properties from backend
+    const [properties, setProperties] = useState([]);
+    const [loadingProperties, setLoadingProperties] = useState(true);
+    const [error, setError] = useState(null);
+
+    // fetch properties from backend
+    useEffect(() => {
+        const fetchProperties = async () => {
+            try {
+            const token = localStorage.getItem("token");
+            const res = await fetch("http://localhost:5000/api/properties/myproperties", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (res.ok) setProperties(data.properties);
+            else setError(data.error || "Failed to fetch properties");
+            } catch (err) {
+            setError(err.message);
+            } finally {
+            setLoadingProperties(false);
+            }
+        };
+        fetchProperties();
+    }, []);
+
     return(
         <section className="w-full bg-gray-50">
             <div className="pt-20 border border-red-500">
@@ -37,7 +64,7 @@ function LandlordDashboard() {
                         <div className="flex-1">
                             <p className="text-gray-700 font-semibold">Total Properties</p>
                             <h2 className="text-xl font-bold text-gray-800 py-1">
-                                <CountUp end={1000} duration={2} separator="," />
+                                <CountUp end={properties.length} duration={2} />
                             </h2>
                             <p className="text-sm text-gray-600">
                                 <span className="text-green-500 inline-flex items-center">

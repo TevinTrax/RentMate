@@ -53,12 +53,12 @@ function SignIn() {
           navigate("/admin/dashboard");
           break;
 
-        case "landlord":
-          navigate("/landlord/dashboard");
+        case "Landlord":
+          navigate("/Landlord/dashboard");
           break;
 
-        case "tenant":
-          navigate("/tenant/dashboard");
+        case "Tenant":
+          navigate("/Tenant/dashboard");
           break;
 
         default:

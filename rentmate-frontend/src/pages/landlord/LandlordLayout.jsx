@@ -11,9 +11,16 @@ import {
   LifeBuoy,
 } from "lucide-react";
 import LandlordNavbar from "./LandlordNavbar";
+import { useEffect, useState } from "react";
 
 function LandlordLayout() {
   const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("Role");
+
+    navigate("/sign-in");
+  };
 
   const navLinkClass = ({ isActive }) =>
     `flex items-center px-4 py-2 gap-2 text-sm font-semibold rounded-lg transition
@@ -22,11 +29,6 @@ function LandlordLayout() {
          ? "bg-green-600 text-white shadow-md"
          : "text-gray-300 hover:bg-gray-700 hover:text-white"
      }`;
-
-  const handleLogout = () => {
-    localStorage.removeItem("token"); // adjust to your auth system
-    navigate("/login");
-  };
 
   return (
     <section className="w-full">

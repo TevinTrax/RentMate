@@ -10,8 +10,72 @@ import {
   FileText,
   Bell
 } from "lucide-react";
+import { useState } from "react";
+import { useEffect } from "react";
 
 function AdminDashboard() {
+
+  const [users, setUsers]= useState([]);
+  const [loading, setLoading]= useState(true);
+
+  const [properties, setProperties] = useState([]);
+  const [loadingProperties, setLoadingProperties] = useState(true);
+  const [error, setError] = useState(null);
+
+  // fetch properties from backend
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          "http://localhost:5000/api/properties/allproperties",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to fetch properties");
+        }
+
+        setProperties(data.properties || []);
+        setLoadingProperties(false);
+
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+        setLoadingProperties(false);
+      }
+    };
+    fetchProperties();
+  }, []);
+
+  // Fetch users 
+  useEffect(()=> {
+    const fetchUsers= async(req, res)=> {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/users/", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+
+        setUsers(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching Users:", error);
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
   return (
     <section className="w-full p-2">
       <div className="p-4">
@@ -31,7 +95,7 @@ function AdminDashboard() {
             <div className="flex-1">
               <p className="text-gray-700 font-semibold">Total Users</p>
               <h2 className="text-xl font-bold text-gray-800 py-1">
-                <CountUp end={2412} duration={2} separator="," />
+                <CountUp end={users.length} duration={2} separator="," />
               </h2>
               <p className="text-sm text-gray-600">
                 <span className="text-green-500 inline-flex items-center">
@@ -50,7 +114,7 @@ function AdminDashboard() {
             <div className="flex-1">
               <p className="text-gray-700 font-semibold">Total Properties</p>
               <h2 className="text-xl font-bold text-gray-800 py-1">
-                <CountUp end={1000} duration={2} separator="," />
+                <CountUp end={properties.length} duration={2} separator="," />
               </h2>
               <p className="text-sm text-gray-600">
                 <span className="text-green-500 inline-flex items-center">

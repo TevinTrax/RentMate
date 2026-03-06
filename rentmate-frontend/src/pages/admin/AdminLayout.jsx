@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   Home,
   Users,
@@ -11,32 +11,58 @@ import {
   Bell,
 } from "lucide-react";
 import AdminNavbar from "./AdminNavbar";
-import { useNavigate } from "react-router-dom";
-
-const navLinkClass = ({ isActive }) =>
-  `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-semibold transition
-   ${
-     isActive
-       ? "bg-blue-500 text-white shadow-md"
-       : "text-gray-700 hover:bg-blue-100 hover:text-blue-600"
-   }`;
+import { useState, useEffect } from "react";
 
 function AdminLayout() {
-  const navigate= useNavigate();
 
-  const handleLogout= ()=>{
-    // remove the token and role from localstorage
+  // store logged in admin
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  const navLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-semibold transition
+     ${
+       isActive
+         ? "bg-blue-500 text-white shadow-md"
+         : "text-gray-700 hover:bg-blue-100 hover:text-blue-600"
+     }`;
+
+  const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
 
-    // redirect user to sign in page
-    navigate("/sign-in")
+    navigate("/sign-in");
   };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:5000/api/users/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+
+        setUser(data);
+
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
+
       {/* Sidebar */}
       <aside className="fixed flex h-screen w-64 flex-col border-r border-gray-200 bg-gray-50">
+
         {/* Brand */}
         <div className="border-b border-gray-200 p-8">
           <h2 className="flex items-center text-2xl font-bold text-blue-500">
@@ -84,31 +110,39 @@ function AdminLayout() {
           </NavLink>
         </nav>
 
-        {/* User Info */}
+        {/* User Profile */}
         <div className="border-t border-gray-200 p-4">
           <div className="flex items-center gap-3">
+
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-300">
-              <User size={22} className="text-gray-600" />
+              {user?.first_name?.charAt(0)}
             </div>
+
             <div className="flex-1">
-              <p className="text-sm font-semibold">Admin User</p>
+              <p className="text-sm font-semibold">
+                {user ? `${user.first_name} ${user.last_name}` : "Loading..."}
+              </p>
+
               <p className="text-xs text-gray-600 truncate">
-                adminuser@gmail.com
+                {user ? user.email : ""}
               </p>
             </div>
+
           </div>
 
           {/* Logout */}
           <button
+            onClick={handleLogout}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg
                        px-4 py-2 text-sm font-semibold text-red-600 transition
                        hover:bg-red-100 hover:text-red-700"
-                       onClick={handleLogout}
           >
             <LogOut size={18} />
             Logout
           </button>
+
         </div>
+
       </aside>
 
       {/* Main Content */}
@@ -116,6 +150,7 @@ function AdminLayout() {
         <AdminNavbar />
         <Outlet />
       </main>
+
     </div>
   );
 }

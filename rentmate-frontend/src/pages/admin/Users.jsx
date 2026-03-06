@@ -1,4 +1,5 @@
 import {
+  Home,
   UserPlus2,
   DownloadCloud,
   Search,
@@ -10,7 +11,13 @@ import {
   BookDown,
   RefreshCw,
   Flag,
-  VerifiedIcon
+  UserPlus,
+  User,
+  Mail,
+  Phone,
+  CheckCircle2,
+  Hash,
+  UserCog2
 } from "lucide-react";
 import { FaLock } from "react-icons/fa6";
 
@@ -33,7 +40,7 @@ function AdminUsers() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
 
-  const [showAddUser, setShowAddUsser]= useState(false);
+  const [showAddUser, setShowAddUser]= useState(false);
 
   const [showVerifyModal, setShowVerifyModal]= useState(false);
 
@@ -59,9 +66,8 @@ function AdminUsers() {
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
 
-  /* ---------------- FETCH USERS ---------------- */
-  useEffect(() => {
-    const fetchUsers = async () => {
+  /*FETCH USERS*/
+  const fetchUsers = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/users/");
         const data = await res.json();
@@ -72,12 +78,13 @@ function AdminUsers() {
         console.error("Error fetching users:", error);
         setLoading(false);
       }
-    };
+  };
 
+  useEffect(() => {
     fetchUsers();
   }, []);
 
-  /* ---------------- CLOSE DROPDOWN OUTSIDE CLICK ---------------- */
+  /*  CLOSE DROPDOWN OUTSIDE CLICK */
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -89,7 +96,7 @@ function AdminUsers() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  /* ---------------- TOGGLE MENU ---------------- */
+  /* TOGGLE MENU  */
   const toggleMenu = (id) => {
     setOpenMenuId((prev) => (prev === id ? null : id));
   };
@@ -108,6 +115,168 @@ function AdminUsers() {
 
     setShowEditModal(true);
     setOpenMenuId(null);
+  };
+
+
+  // info item component for details modal
+  const InfoItem = ({ icon, label, value }) => (
+    <div className="flex items-start gap-3">
+      <div className="w-9 h-9 flex items-center justify-center 
+                      rounded-lg bg-blue-100 text-blue-600">
+        {icon}
+      </div>
+      <div>
+        <p className="text-gray-500 text-xs uppercase tracking-wide">
+          {label}
+        </p>
+        <p className="font-medium text-gray-800">
+          {value || "—"}
+        </p>
+      </div>
+    </div>
+  );
+
+  // section wrapper/ balanced spacing for details modal
+  const Section = ({ title, children }) => (
+    <div className="bg-gray-50 rounded-xl p-6 shadow-sm border">
+      <h3 className="text-lg font-semibold text-blue-600 mb-6">
+        {title}
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        {children}
+      </div>
+    </div>
+  );
+
+  // date formatter
+  const formatDate = (date) => {
+    if (!date) return "—";
+    return new Date(date).toLocaleDateString("en-GB");
+  };
+
+  // status badge for details modal
+  const StatusBadge = ({ value }) => {
+    if (!value) return "—";
+
+    const styles =
+      value === "active"
+        ? "bg-green-100 text-green-600"
+        : value === "inactive"
+        ? "bg-red-100 text-red-600"
+        : "bg-gray-200 text-gray-600";
+
+    return (
+      <span className={`px-3 py-1 text-xs rounded-full font-medium ${styles}`}>
+        {value}
+      </span>
+    );
+  };
+
+  // subscription badge for details modal
+  const SubscriptionBadge = ({ status }) => {
+    if (!status) return "—";
+
+    const styles =
+      status === "active"
+        ? "bg-green-100 text-green-600"
+        : status === "trial"
+        ? "bg-yellow-100 text-yellow-700"
+        : "bg-red-100 text-red-600";
+
+    return (
+      <span className={`px-3 py-1 text-xs rounded-full font-semibold ${styles}`}>
+        {status}
+      </span>
+    );
+  };
+
+  // post user to db
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    id_number: "",
+    phone_number: "",
+    alt_phone_number: "",
+    role: "",
+    password: "",
+    confirmPassword: ""
+  });
+
+  const handleChange = (e) =>{
+    setFormData({...formData, [e.target.id]: e.target.value});
+  };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (formData.password.trim() !== formData.confirmPassword.trim()) {
+    alert("Passwords do not match!");
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+      const {
+        first_name,
+        last_name,
+        email,
+        id_number,
+        phone_number,
+        alt_phone_number,
+        role,
+        password
+      } = formData;
+
+      const response = await fetch("http://localhost:5000/api/users/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          first_name,
+          last_name,
+          email,
+          id_number,
+          phone_number,
+          alt_phone_number,
+          role,
+          password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Failed to add user");
+        return;
+      }
+
+      alert("User added successfully!");
+
+      // reset form
+      setFormData({
+        first_name: "",
+        last_name: "",
+        email: "",
+        id_number: "",
+        phone_number: "",
+        alt_phone_number: "",
+        role: "",
+        password: "",
+        confirmPassword: ""
+      });
+
+      setShowAddUser(false);
+
+      // refresh table
+      fetchUsers();
+
+    } catch (error) {
+      console.error("Error adding user:", error);
+      alert("Something went wrong");
+    }
   };
 
 
@@ -133,7 +302,7 @@ function AdminUsers() {
 
             <button className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700"
               onClick={()=>{
-                setShowAddUsser(true);
+                setShowAddUser(true);
               }}
             >
               <UserPlus2 className="h-4 w-4" />
@@ -144,7 +313,7 @@ function AdminUsers() {
 
         {/* STATS */}
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="flex items-center justify-between rounded-lg bg-blue-50 p-4 shadow-md transition hover:scale-105">
+          <div className="flex items-center justify-between rounded-lg bg-blue-50 hover:border hover:border-blue-300 p-4 shadow-md transition hover:scale-105">
             <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700">
               <Users className="text-white" size={30} />
             </div>
@@ -157,7 +326,7 @@ function AdminUsers() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4 shadow-md transition hover:scale-105">
+          <div className="flex items-center justify-between rounded-lg bg-gray-50 hover:border hover:border-gray-300 p-4 shadow-md transition hover:scale-105">
             <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-gray-300">
               <Verified className="text-gray-800" size={30} />
             </div>
@@ -170,7 +339,7 @@ function AdminUsers() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg bg-green-50 p-4 shadow-md transition hover:scale-105">
+          <div className="flex items-center justify-between rounded-lg bg-green-50 hover:border hover:border-green-300 p-4 shadow-md transition hover:scale-105">
             <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-700">
               <Verified className="text-white" size={30} />
             </div>
@@ -183,7 +352,7 @@ function AdminUsers() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg bg-yellow-50 p-4 shadow-md transition hover:scale-105">
+          <div className="flex items-center justify-between rounded-lg bg-yellow-50 hover:border hover:border-yellow-300 p-4 shadow-md transition hover:scale-105">
             <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-700">
               <Clock className="text-white" size={30} />
             </div>
@@ -221,7 +390,7 @@ function AdminUsers() {
                   <th className="p-3">Contact</th>
                   <th className="p-3">Role</th>
                   <th className="p-3">Verified</th>
-                  <th className="p-3">Status</th>
+                  <th className="p-3">Account Status</th>
                   <th className="p-3">Joined</th>
                   <th className="p-3">Actions</th>
                 </tr>
@@ -229,7 +398,7 @@ function AdminUsers() {
 
               <tbody className="">
                 {currentUsers.map((user, index) =>  (
-                  <tr key={user.email} className="hover:bg-gray-50 py-1 text-sm border-b border-gray-200">
+                  <tr key={user.id} className="hover:bg-gray-50 py-1 text-sm border-b border-gray-200">
                     <td className="p-3">{indexOfFirstUser + index + 1}</td>
                     <td className="p-3">{user.first_name} {user.last_name}</td>
                     <td className="p-3">{user.email}</td>
@@ -305,7 +474,7 @@ function AdminUsers() {
                               setOpenMenuId(null);
                             }}
                           >
-                            <VerifiedIcon size={16}/>
+                            <Verified size={16}/>
                             Verify
                             </button>
 
@@ -371,45 +540,139 @@ function AdminUsers() {
 
             {/* view details modal */}
             {showDetailsModal && selectedUser && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div className="bg-white rounded-xl shadow-xl max-w-3xl p-6
-                                transform transition-all duration-300 scale-100">
+              <div className="fixed inset-0 z-50 flex items-center justify-center 
+                              bg-black/50 backdrop-blur-sm p-4">
 
-                  <h2 className="text-xl font-bold mb-2 text-blue-500">User Details</h2>
+                <div className="bg-white w-full max-w-5xl max-h-[85vh] rounded-2xl shadow-2xl 
+                                overflow-hidden animate-in fade-in zoom-in-95 duration-300">
 
-                  <div className=" grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="">
-                      <h1 className="text-md font-bold text-green-500">1. Personal Information</h1>
-                      <div className="space-y-2 text-sm p-2">
-                        <p><strong>Name:</strong> {selectedUser.first_name} {selectedUser.last_name}</p>
-                        <p><strong>Email:</strong> {selectedUser.email}</p>
-                        <p><strong>Role:</strong> {selectedUser.role}</p>
-                        <p><strong>Phone:</strong> {selectedUser.phone_number}</p>
-                        <p><strong>Alternative Phone Number:</strong> {selectedUser.alt_phone_number}</p>
-                        <p><strong>Status:</strong> {selectedUser.status}</p>
-                        <p><strong>Verification:</strong> {selectedUser.is_verified}</p>
-                      </div>
-                    </div>
+                  {/* HEADER */}
+                  <div className="flex items-center justify-between px-8 py-4 border-b bg-gray-50">
                     <div>
-                      <h2 className="text-md font-bold text-green-500">2. Address / Property Info</h2>
-                      <div className="space-y-2 text-sm p-2">
-                        <p><strong>Apartment Name:</strong> {selectedUser.apartment_name}</p>
-                        <p><strong>House/Unit Number:</strong> {selectedUser.house_number}</p>
-                        <p><strong>Landlord:</strong> {}</p>
-                      </div>
-                      <h3 className="text-md font-bold text-green-500">3. Account / System Info</h3>
-                      <div className="space-y-2 text-sm">
-                        <p><strong>Reference:</strong> {selectedUser.reference}</p>
-                        <p><strong>Joined:</strong> {new Date(selectedUser.created_at).toLocaleDateString("en-GB")}</p>
-                        <p><strong>Last Login:</strong> {new Date(selectedUser.created_at).toLocaleDateString("en-GB")}</p>
-                      </div>
+                      <h2 className="text-2xl font-bold text-gray-800">
+                        {selectedUser.first_name} {selectedUser.last_name}
+                      </h2>
+                      <p className="text-sm text-gray-500 mt-1">
+                        User Profile Overview
+                      </p>
                     </div>
-                  </div>
 
-                  <div className="flex justify-end mt-6">
                     <button
                       onClick={() => setShowDetailsModal(false)}
-                      className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
+                      className="text-gray-400 hover:text-red-500 text-xl font-bold transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* BODY */}
+                  <div className="px-8 py-8 space-y-8 max-h-[60vh] overflow-y-auto">
+
+                    {/* PERSONAL INFORMATION */}
+                    <Section title="Personal Information">
+                      <InfoItem icon={<Mail size={18} />} label="Email" value={selectedUser.email} />
+                      <InfoItem icon={<Phone size={18} />} label="Phone" value={selectedUser.phone_number} />
+                      <InfoItem icon={<Phone size={18} />} label="Alternative Phone" value={selectedUser.alt_phone_number} />
+                      <InfoItem icon={<UserPlus size={18} />} label="Role" value={selectedUser.role} />
+
+                      <InfoItem
+                        icon={<CheckCircle2 size={18} />}
+                        label="Account Status"
+                        value={
+                          <StatusBadge value={selectedUser.status} />
+                        }
+                      />
+
+                      <InfoItem
+                        icon={<Verified size={18} />}
+                        label="Verification"
+                        value={
+                          selectedUser.is_verified ? (
+                            <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-600 font-medium">
+                              Verified
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-600 font-medium">
+                              Not Verified
+                            </span>
+                          )
+                        }
+                      />
+                    </Section>
+
+                    {/* PROPERTY INFORMATION */}
+                    <Section title="Property Information">
+                      <InfoItem icon={<Home size={18} />} label="Apartment" value={selectedUser.apartment_name} />
+                      <InfoItem icon={<Hash size={18} />} label="Unit Number" value={selectedUser.house_number} />
+                      <InfoItem icon={<UserCog2 size={18} />} label="Landlord" value="—" />
+                    </Section>
+
+                    {/* ACCOUNT INFORMATION */}
+                    <Section title="Account Information">
+                      <InfoItem icon={<Hash size={18} />} label="Reference" value={selectedUser.reference} />
+                      <InfoItem
+                        icon={<Clock size={18} />}
+                        label="Joined"
+                        value={formatDate(selectedUser.created_at)}
+                      />
+                      <InfoItem
+                        icon={<Clock size={18} />}
+                        label="Last Login"
+                        value={selectedUser.last_login ? formatDate(selectedUser.last_login) : "Never"}
+                      />
+                    </Section>
+
+                    {/* SUBSCRIPTION INFORMATION */}
+                    <div className="rounded-xl p-6 bg-gradient-to-r 
+                                    from-blue-50 via-indigo-50 to-purple-50 
+                                    border border-indigo-100 shadow-sm">
+
+                      <h3 className="text-lg font-semibold text-indigo-700 mb-6">
+                        Subscription Information
+                      </h3>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+
+                        <InfoItem
+                          icon={<CheckCircle2 size={18} />}
+                          label="Subscription Status"
+                          value={<SubscriptionBadge status={selectedUser.subscription_status} />}
+                        />
+
+                        <InfoItem
+                          icon={<Clock size={18} />}
+                          label="Trial Start Date"
+                          value={formatDate(selectedUser.trial_start_date)}
+                        />
+
+                        <InfoItem
+                          icon={<Clock size={18} />}
+                          label="Trial End Date"
+                          value={formatDate(selectedUser.trial_end_date)}
+                        />
+
+                        <InfoItem
+                          icon={<Clock size={18} />}
+                          label="Subscription Start"
+                          value={formatDate(selectedUser.subscription_start_date)}
+                        />
+
+                        <InfoItem
+                          icon={<Clock size={18} />}
+                          label="Subscription End"
+                          value={formatDate(selectedUser.subscription_end_date)}
+                        />
+
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* FOOTER */}
+                  <div className="flex justify-end px-8 py-4 border-t bg-gray-50">
+                    <button
+                      onClick={() => setShowDetailsModal(false)}
+                      className="px-6 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 transition font-medium"
                     >
                       Close
                     </button>
@@ -418,7 +681,6 @@ function AdminUsers() {
                 </div>
               </div>
             )}
-
 
             {/* edit modal */}
             {showEditModal && selectedUser && (
@@ -597,42 +859,42 @@ function AdminUsers() {
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                 <div className="max-w-2xl bg-gray-100 rounded-lg shadow-xl p-6">
                   <h1 className="text-xl font-bold text-gray-800 py-2">Add User</h1>
-                  <form action="" className="space-y-3">
+                  <form action="" className="space-y-3" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <div className="">
                         <label htmlFor="" className="text-md text-gray-800">First Name</label>
-                        <input type="text" placeholder="Enter Your First Name" className="w-full p-2 mt-1 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500"/>
+                        <input type="text" placeholder="Enter Your First Name" className="w-full p-2 mt-1 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" value={formData.first_name} onChange={handleChange} id="first_name"/>
                       </div>
                       <div className="">
                         <label htmlFor="" className="text-md text-gray-800">Last Name</label>
-                        <input type="text" placeholder="Enter Your Last Name" className="w-full p-2 mt-1 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500"/>
+                        <input type="text" placeholder="Enter Your Last Name" className="w-full p-2 mt-1 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" value={formData.last_name} onChange={handleChange} id="last_name"/>
                       </div>
                     </div>
                     <div>
                       <label htmlFor="" className="text-md text-gray-800">Email</label>
-                      <input type="email" placeholder="Enter Your Email" className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500"/>
+                      <input type="email" placeholder="Enter Your Email" className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" value={formData.email} onChange={handleChange} id="email"/>
                     </div>
                     <div>
-                      <label htmlFor="" className="text-md text-gray-800">Role</label>
-                      <select name="" id="" className="w-full p-2 mt-1 border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500 rounded-lg text-sm">
+                      <label htmlFor="role" className="text-md text-gray-800">Role</label>
+                      <select className="w-full p-2 mt-1 border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500 rounded-lg text-sm" value={formData.role} onChange={handleChange} id="role">
                         <option value="">Choose Role</option>
                         <option value="admin">Admin</option>
-                        <option value="tenant">Tenant</option>
+                        <option value="Tenant">Tenant</option>
                         <option value="landlord">Landlord</option>
                       </select>
                     </div>
                     <div>
                       <label htmlFor="" className="text-md text-gray-800">ID Number</label>
-                      <input type="number" placeholder="Enter Your ID Number" className="w-full p-2 mt-1 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" />
+                      <input type="number" placeholder="Enter Your ID Number" className="w-full p-2 mt-1 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" value={formData.id_number} onChange={handleChange} id="id_number"/>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="">
                         <label htmlFor="" className="text-md text-gray-800">Phone Number</label>
-                        <input type="tel" placeholder="e.g 0700000000" className="w-full p-2 mt-1 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500"/>
+                        <input type="tel" placeholder="e.g 0700000000" className="w-full p-2 mt-1 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" value={formData.phone_number} onChange={handleChange} id="phone_number"/>
                       </div>
                       <div className="">
                         <label htmlFor="" className="text-md text-gray-800">Alternative Phone Number</label>
-                        <input type="tel" placeholder="e.g 0700000000" className="w-full p-2 mt-1 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500"/>
+                        <input type="tel" placeholder="e.g 0700000000" className="w-full p-2 mt-1 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" value={formData.alt_phone_number} onChange={handleChange} id="alt_phone_number"/>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -640,20 +902,20 @@ function AdminUsers() {
                         <label htmlFor="" className="text-md text-gray-800 mb-2">Create Password</label>
                         <div className="relative">
                           <FaLock size={18} className="absolute left-3 top-3 text-gray-400"/>
-                          <input type="password" placeholder="Create Password" className="w-full p-2 text-sm mt-1 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" />
+                          <input type="password" placeholder="Create Password" className="w-full p-2 text-sm mt-1 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" value={formData.password} onChange={handleChange} id="password"/>
                         </div>
                       </div>
                       <div>
                         <label htmlFor="" className="text-md text-gray-800 mb-2">Confirm Password</label>
                         <div className="relative">
                           <FaLock size={18} className="absolute left-3 top-3 text-gray-400"/>
-                          <input type="password" placeholder="Confirm Password" className="w-full p-2 text-sm mt-1 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" />
+                          <input type="password" placeholder="Confirm Password" className="w-full p-2 text-sm mt-1 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500" value={formData.confirmPassword} onChange={handleChange} id="confirmPassword"/>
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-end space-x-4">
-                      <button className="py-2 px-8 text-md font-bold text-gray-800 border border-gray-300 hover:bg-gray-300 rounded-lg" onClick={()=>showAddUser(false)}>Cancel</button>
-                      <button className="py-2 px-8 text-md font-bold text-gray-800 bg-green-400 hover:bg-green-600 rounded-lg">Confirm</button>
+                      <button className="py-2 px-8 text-md font-bold text-gray-800 border border-gray-300 hover:bg-gray-300 rounded-lg" onClick={()=>setShowAddUser(false)}>Cancel</button>
+                      <button type="submit" className="py-2 px-8 text-md font-bold text-gray-800 bg-green-400 hover:bg-green-600 rounded-lg">Confirm</button>
                     </div>
                   </form>
                 </div>

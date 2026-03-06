@@ -8,7 +8,8 @@ function LandlordRegistration() {
 
   // Initialize form data with role from URL param
   const [ formData, setFormData]= useState({
-    full_name:"",
+    first_name:"",
+    last_name:"",
     role: role || "Landlord",           // role from URL param
     email:"",
     id_number:"",
@@ -43,7 +44,8 @@ function LandlordRegistration() {
 
     try {
       const {
-        full_name,
+        first_name,
+        last_name,
         role,   
         email,
         id_number,
@@ -59,7 +61,8 @@ function LandlordRegistration() {
           "Content-Type":"application/json",
         },
         body: JSON.stringify({
-          full_name,
+          first_name,
+          last_name,
           role,
           email,
           id_number,
@@ -170,7 +173,7 @@ function LandlordRegistration() {
               placeholder="Enter your ID number"
               value={formData.id_number}
               onChange={handleChange}
-              max={8}
+              max={9999999999} // max 10 digits
               className="w-full rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-400 p-2 text-sm md:text-md"
             />
           </div>
