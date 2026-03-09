@@ -11,6 +11,10 @@ import { useEffect, useRef, useState } from "react";
 
 function AdminProperties() {
 
+  const [openViewDetails, setOpenViewDetails] = useState(false);
+  const [openEditProperty, setOpenEditProperty] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+
   const dropdownRef = useRef(null);
 
   // properties state
@@ -34,7 +38,7 @@ function AdminProperties() {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         const res = await fetch(
           "http://localhost:5000/api/properties/allproperties",
           {
@@ -228,8 +232,8 @@ function AdminProperties() {
                       KES {property.monthly_rent?.toLocaleString()}
                     </p>
                     <div className="flex items-center justify-between mt-2">
-                      <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-100 hover:scale-105">View Details</button>
-                      <button className="px-4 py-2 rounded-lg text-sm font-bold text-gray-50 bg-green-500 hover:bg-green-600 hover:scale-105">Edit</button>
+                      <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-100 hover:scale-105" onClick={()=>{setOpenViewDetails(true); setSelectedProperty(property);}}>View Details</button>
+                      <button className="px-4 py-2 rounded-lg text-sm font-bold text-gray-50 bg-green-500 hover:bg-green-600 hover:scale-105" onClick={()=>{setOpenEditProperty(true); setSelectedProperty(property);}}>Edit</button>
                     </div>
 
                   </div>
@@ -238,6 +242,38 @@ function AdminProperties() {
 
             </div>
           </div>
+
+          {openViewDetails && selectedProperty && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
+                <button
+                  onClick={() => setOpenViewDetails(false)}
+                  className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
+          {openEditProperty && selectedProperty && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
+                <div>
+                  <div>
+                    <h1 className="text-xl font-bold text-blue-600">Edit Property</h1>
+                    <p className="text-md font-semibold mb-4">Modify property details</p>
+                  </div>
+                  <button
+                    onClick={() => setOpenEditProperty(false)}
+                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
 

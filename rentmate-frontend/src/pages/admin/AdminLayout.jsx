@@ -28,8 +28,8 @@ function AdminLayout() {
      }`;
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("role");
 
     navigate("/sign-in");
   };
@@ -37,7 +37,11 @@ function AdminLayout() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
+        if (!token) {
+          navigate("/sign-in");
+          return;
+        }
 
         const res = await fetch("http://localhost:5000/api/users/profile", {
           headers: {

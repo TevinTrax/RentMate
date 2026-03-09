@@ -69,7 +69,14 @@ function AdminUsers() {
   /*FETCH USERS*/
   const fetchUsers = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/users/");
+        const token = sessionStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/users/",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         const data = await res.json();
 
         setUsers(data);
@@ -216,7 +223,7 @@ function AdminUsers() {
   }
 
   try {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
       const {
         first_name,
         last_name,
@@ -810,47 +817,136 @@ function AdminUsers() {
               </div>
             )}
 
-            {showVerifyModal && selectedUser &&(
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div className="max-w-3xl bg-gray-50 rounded-lg shadow-xl p-6">
-                  <h1 className="text-lg text-blue-500 font-bold py-2">Verify User</h1>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="">
-                      <h2 className="text-md text-green-500 font-bold py-1">1. User Identity Information</h2>
-                      <div className="space-y-2 text-sm">
-                        <p><strong>Full Name:</strong> {selectedUser.first_name} {selectedUser.last_name}</p>
-                        <p><strong>Email:</strong> {selectedUser.email}</p>
-                        <p><strong>Phone Number:</strong> {selectedUser.phone_number}</p>
-                        <p><strong>Alternative Phone Number:</strong> {selectedUser.alt_phone_number}</p>
-                        <p><strong>Role:</strong> {selectedUser.role}</p>
-                        <p><strong>ID Number:</strong> {selectedUser.id_number}</p>
-                      </div>
-                      <h3 className="text-md text-green-500 font-bold py-1">2. Verification Status Indicator</h3>
-                      <div className="space-y-2 text-sm">
-                        <p><strong>Email Verified:</strong> Yes/No</p>
-                      </div>
+           {showVerifyModal && selectedUser && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                
+                <div className="w-full max-w-4xl bg-white rounded-xl shadow-2xl p-8">
+
+                  {/* Header */}
+                  <div className="flex justify-between items-center border-b pb-3 mb-6">
+                    <div>
+                      <h1 className="text-xl font-bold text-blue-600">{selectedUser.first_name} {selectedUser.last_name}</h1>
+                      <p className="text-md font-semibold">User Verification</p>
                     </div>
-                    <div className="">
-                      <h2 className="text-md text-green-500 font-bold py-1">3. Supporting Evidence</h2>
-                      <div className="space-y-2 text-sm">
-                        <p><strong>Uploaded ID/ Document:</strong></p>
-                        <p><strong>Proof of ownership (landlords):</strong></p>
-                        <p><strong>Profile photo:</strong></p>
+                    <button
+                      onClick={() => setShowVerifyModal(false)}
+                      className="text-gray-500 hover:text-gray-800"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    {/* LEFT SIDE */}
+                    <div className="space-y-6">
+
+                      {/* Identity Info */}
+                      <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                        <h2 className="font-semibold text-green-600 mb-3">
+                          1. User Identity Information
+                        </h2>
+
+                        <div className="space-y-2 text-sm">
+                          <p><span className="font-semibold">Full Name:</span> {selectedUser.first_name} {selectedUser.last_name}</p>
+                          <p><span className="font-semibold">Email:</span> {selectedUser.email}</p>
+                          <p><span className="font-semibold">Phone:</span> {selectedUser.phone_number}</p>
+                          <p><span className="font-semibold">Alt Phone:</span> {selectedUser.alt_phone_number}</p>
+                          <p>
+                            <span className="font-semibold">Role:</span> 
+                            <span className="ml-2 px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">
+                              {selectedUser.role}
+                            </span>
+                          </p>
+                          <p><span className="font-semibold">ID Number:</span> {selectedUser.id_number}</p>
+                        </div>
                       </div>
-                      <h3 className="text-md text-green-500 font-bold py-1">4. Risk / Validation Clues</h3>
-                      <div className="space-y-2 text-sm">
-                        <p><strong>Registration Date:</strong> {new Date(selectedUser.created_at).toLocaleDateString("en-GB")}</p>
-                        <p><strong>Last Login:</strong> {new Date(selectedUser.created_at).toLocaleDateString("en-GB")}</p>
-                        <p><strong>Number of Properties (landlord):</strong></p>
+
+                      {/* Verification Status */}
+                      <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                        <h3 className="font-semibold text-green-600 mb-3">
+                          2. Verification Status
+                        </h3>
+
+                        <div className="text-sm">
+                          <p>
+                            <span className="font-semibold">Email Verified:</span>{" "}
+                            <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">
+                              Yes
+                            </span>
+                          </p>
+                        </div>
                       </div>
+
                     </div>
+
+
+                    {/* RIGHT SIDE */}
+                    <div className="space-y-6">
+
+                      {/* Supporting Evidence */}
+                      <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                        <h2 className="font-semibold text-green-600 mb-3">
+                          3. Supporting Evidence
+                        </h2>
+
+                        <div className="space-y-2 text-sm">
+                          <p><span className="font-semibold">Uploaded ID:</span> Document preview</p>
+                          <p><span className="font-semibold">Ownership Proof:</span> (Landlord only)</p>
+                          <p><span className="font-semibold">Profile Photo:</span></p>
+                        </div>
+                      </div>
+
+                      {/* Risk Info */}
+                      <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                        <h3 className="font-semibold text-green-600 mb-3">
+                          4. Risk / Validation Clues
+                        </h3>
+
+                        <div className="space-y-2 text-sm">
+                          <p>
+                            <span className="font-semibold">Registration Date:</span>{" "}
+                            {new Date(selectedUser.created_at).toLocaleDateString("en-GB")}
+                          </p>
+
+                          <p>
+                            <span className="font-semibold">Last Login:</span>{" "}
+                            {new Date(selectedUser.created_at).toLocaleDateString("en-GB")}
+                          </p>
+
+                          <p>
+                            <span className="font-semibold">Properties Owned:</span> —
+                          </p>
+                        </div>
+                      </div>
+
+                    </div>
+
                   </div>
-                  <div className="flex justify-end space-x-4 mt-2">
-                    <button className="py-2 px-8 text-md font-bold text-red-500 bg-red-100 rounded-lg hover:bg-red-200">Reject</button>
-                    <button className="py-2 px-8 text-md font-bold text-green-500 bg-green-100 rounded-lg hover:bg-green-200">Confirm</button>
-                    <button className="py-2 px-8 text-md font-bold text-gray-800 bg-gray-100 rounded-lg hover:bg-gray-200" onClick={()=>setShowVerifyModal(false)}>Cancel</button>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end gap-4 mt-8 border-t pt-4">
+
+                    <button className="px-6 py-2 font-semibold text-red-600 bg-red-100 rounded-lg hover:bg-red-200">
+                      Reject
+                    </button>
+
+                    <button className="px-6 py-2 font-semibold text-green-600 bg-green-100 rounded-lg hover:bg-green-200">
+                      Confirm
+                    </button>
+
+                    <button
+                      onClick={() => setShowVerifyModal(false)}
+                      className="px-6 py-2 font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+
                   </div>
+
                 </div>
+
               </div>
             )}
 
@@ -878,9 +974,9 @@ function AdminUsers() {
                       <label htmlFor="role" className="text-md text-gray-800">Role</label>
                       <select className="w-full p-2 mt-1 border border-gray-300 focus:outline-none focus:ring-2 ring-blue-500 rounded-lg text-sm" value={formData.role} onChange={handleChange} id="role">
                         <option value="">Choose Role</option>
-                        <option value="admin">Admin</option>
+                        <option value="Admin">Admin</option>
                         <option value="Tenant">Tenant</option>
-                        <option value="landlord">Landlord</option>
+                        <option value="Landlord">Landlord</option>
                       </select>
                     </div>
                     <div>

@@ -26,7 +26,7 @@ function AdminDashboard() {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         const res = await fetch(
           "http://localhost:5000/api/properties/allproperties",
           {
@@ -58,7 +58,7 @@ function AdminDashboard() {
   useEffect(()=> {
     const fetchUsers= async(req, res)=> {
       try {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         const res = await fetch("http://localhost:5000/api/users/", {
           headers: {
             Authorization: `Bearer ${token}`

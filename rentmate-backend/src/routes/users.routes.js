@@ -6,9 +6,9 @@ const router = express.Router();
 
 router.post("/admin", verifyToken, requireRole("admin"), createUserAdmin);
 router.post("/register", registerUser);
-router.post("/landlord", createUserLandlord);
-router.post("/tenant", createUserTenant);
-router.get("/", fetchUsers);
+router.post("/landlord",verifyToken, createUserLandlord);
+router.post("/tenant",verifyToken, createUserTenant);
+router.get("/",verifyToken, requireRole("admin"), fetchUsers);
 router.get("/profile", verifyToken, getProfile);
 
 export default router;

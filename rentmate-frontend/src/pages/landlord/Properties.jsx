@@ -130,7 +130,7 @@ function LandlordProperties() {
 
   const fetchProperties = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       const res = await fetch("http://localhost:5000/api/properties/myproperties", {
         headers: { Authorization: `Bearer ${token}` },
       });

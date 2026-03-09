@@ -16,8 +16,8 @@ import { useEffect, useState } from "react";
 function LandlordLayout() {
   const navigate = useNavigate();
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("Role");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("role");
 
     navigate("/sign-in");
   };

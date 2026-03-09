@@ -13,6 +13,12 @@ function TenantLayout() {
        : "text-gray-300 hover:bg-gray-700 hover:text-gray-200"
    }`;
 
+    const handleLogout = () => {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("role");
+        navigate("/sign-in");
+    };
+
     return(
         <section className="w-full">
             <div className="flex min-h-screen">
@@ -71,7 +77,7 @@ function TenantLayout() {
                         Help & Support
                         </button>
 
-                        <button className="w-full px-6 py-2 rounded-lg text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition">
+                        <button className="w-full px-6 py-2 rounded-lg text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition" onClick={handleLogout}>
                         Logout
                         </button>
                     </div>

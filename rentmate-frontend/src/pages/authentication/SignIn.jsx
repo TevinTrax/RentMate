@@ -44,12 +44,12 @@ function SignIn() {
       }
 
       // Save token & role
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.user.role);
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("role", data.user.role);
 
       // Redirect based on role (BACKEND role, not frontend)
       switch (data.user.role) {
-        case "admin":
+        case "Admin":
           navigate("/admin/dashboard");
           break;
 

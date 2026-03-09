@@ -49,8 +49,8 @@ export const registerUser = async (req, res) => {
     const result = await pool.query(
       `
       INSERT INTO users
-      (first_name, last_name, email, id_number, phone_number, alt_phone_number, role, password_hash)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      (first_name, last_name, email, id_number, phone_number, alt_phone_number, role, subscription_status, password_hash)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       RETURNING id, first_name, last_name, email, role
       `,
       [
@@ -61,6 +61,7 @@ export const registerUser = async (req, res) => {
         phone_number,
         alt_phone_number,
         role,
+        "Trial",
         hashedPassword
       ]
     );
@@ -86,8 +87,7 @@ export const createUserAdmin = async (req, res) => {
       id_number,
       phone_number,
       alt_phone_number,
-      password,
-      role,
+      password
     } = req.body;
 
     /* 1. Validation */
@@ -127,7 +127,7 @@ export const createUserAdmin = async (req, res) => {
       [
         first_name,
         last_name,
-        role || "admin",
+        "Admin",
         email,
         phone_number,
         alt_phone_number,
@@ -213,7 +213,7 @@ export const createUserLandlord = async (req, res) => {
         id_number,
         hashedPassword,
         ref || null,
-        "trial",
+        "Trial",
         trialStart,
         trialEnd,
       ]
@@ -299,7 +299,7 @@ export const createUserTenant = async (req, res) => {
         apartment_name,
         house_number,
         reference,
-        "trial",
+        "Trial",
         trialStart,
         trialEnd
       ]
