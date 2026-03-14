@@ -333,7 +333,7 @@ export const fetchUsers = async (req, res) => {
       SELECT id, first_name, last_name, role, email,
              phone_number, alt_phone_number,
              id_number, apartment_name, house_number,
-             reference, is_verified, status, created_at, subscription_status, trial_start_date, trial_end_date
+             reference, is_verified, account_status, created_at, subscription_status, trial_start_date, trial_end_date, approval_status
       FROM users
       ORDER BY created_at DESC
       `
@@ -353,7 +353,7 @@ export const getProfile = async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT id, first_name, last_name, email, role
+      SELECT id, first_name, last_name, email, role, approval_status, phone_number, alt_phone_number, id_number, apartment_name, house_number, reference, subscription_status, trial_start_date, trial_end_date
       FROM users
       WHERE id = $1
       `,
@@ -372,5 +372,53 @@ export const getProfile = async (req, res) => {
     res.status(500).json({
       error: "Server error: " + error.message
     });
+  }
+};
+
+// Admin can update user details (including approval_status and account_status)
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      first_name,
+      last_name,
+      phone_number,
+      alt_phone_number,
+      role,
+      account_status
+    } = req.body;
+
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET first_name=$1,
+          last_name=$2,
+          phone_number=$3,
+          alt_phone_number=$4,
+          role=$5,
+          account_status=$6
+      WHERE id=$7
+      RETURNING *
+      `,
+      [
+        first_name,
+        last_name,
+        phone_number,
+        alt_phone_number,
+        role,
+        account_status,
+        id
+      ]
+    );
+
+    res.json({
+      message: "User updated successfully",
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
   }
 };

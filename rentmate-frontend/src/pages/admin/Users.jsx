@@ -20,6 +20,7 @@ import {
   UserCog2
 } from "lucide-react";
 import { FaLock } from "react-icons/fa6";
+import StatusBadge from "../../components/StatusBadge";
 
 import CountUp from "react-countup";
 import { useState, useEffect, useRef } from "react";
@@ -161,24 +162,6 @@ function AdminUsers() {
     return new Date(date).toLocaleDateString("en-GB");
   };
 
-  // status badge for details modal
-  const StatusBadge = ({ value }) => {
-    if (!value) return "—";
-
-    const styles =
-      value === "active"
-        ? "bg-green-100 text-green-600"
-        : value === "inactive"
-        ? "bg-red-100 text-red-600"
-        : "bg-gray-200 text-gray-600";
-
-    return (
-      <span className={`px-3 py-1 text-xs rounded-full font-medium ${styles}`}>
-        {value}
-      </span>
-    );
-  };
-
   // subscription badge for details modal
   const SubscriptionBadge = ({ status }) => {
     if (!status) return "—";
@@ -286,6 +269,79 @@ function AdminUsers() {
     }
   };
 
+  const handleApprove = async () => {
+    console.log("Approve clicked", selectedUser);
+    try {
+      const token = sessionStorage.getItem("token");
+
+      const response = await fetch(
+        `http://localhost:5000/api/auth/approve-landlord/${selectedUser.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Approval failed");
+        return;
+      }
+
+      alert("Landlord approved successfully");
+
+      setShowApproveModal(false);
+
+      fetchUsers(); // refresh table
+
+    } catch (error) {
+      console.error("Approve error:", error);
+    }
+  };
+
+
+  // handle save changes in edit modal
+  const handleSaveChanges = async () => {
+    try {
+      const token = sessionStorage.getItem("token");
+
+      const res = await fetch(`http://localhost:5000/api/users/${selectedUser.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phone,
+          alt_phone_number: altPhone,
+          role: role,
+          account_status: status
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("User updated successfully");
+        setShowEditModal(false);
+
+        // reload users
+        window.location.reload();
+      } else {
+        alert(data.error);
+      }
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
 
   return (
     <section className="w-full p-4">
@@ -367,7 +423,7 @@ function AdminUsers() {
             <div className="flex-1">
               <p className="text-gray-600">Pending Approval</p>
               <h2 className="py-1 text-2xl font-bold text-gray-800">
-                <CountUp end={users.filter((u)=> u.status==="Pending").length} duration={2} />
+                <CountUp end={users.filter((u)=> u.approval_status==="pending").length} duration={2} />
               </h2>
             </div>
           </div>
@@ -397,7 +453,7 @@ function AdminUsers() {
                   <th className="p-3">Contact</th>
                   <th className="p-3">Role</th>
                   <th className="p-3">Verified</th>
-                  <th className="p-3">Account Status</th>
+                  <th className="p-3">Approval Status</th>
                   <th className="p-3">Joined</th>
                   <th className="p-3">Actions</th>
                 </tr>
@@ -424,10 +480,14 @@ function AdminUsers() {
                       </span>
                     </td>
 
-                    <td className="p-3">
+                    {/* <td className="p-3">
                       <span className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-700">
-                        {user.status}
+                        {user.account_status}
                       </span>
+                    </td> */}
+
+                    <td className="p-3">
+                      <StatusBadge status={user.approval_status}/>
                     </td>
 
                     <td className="p-3">
@@ -580,13 +640,22 @@ function AdminUsers() {
                       <InfoItem icon={<Mail size={18} />} label="Email" value={selectedUser.email} />
                       <InfoItem icon={<Phone size={18} />} label="Phone" value={selectedUser.phone_number} />
                       <InfoItem icon={<Phone size={18} />} label="Alternative Phone" value={selectedUser.alt_phone_number} />
+                      <InfoItem icon={<Hash size={18} />} label="ID Number" value={selectedUser.id_number} />
                       <InfoItem icon={<UserPlus size={18} />} label="Role" value={selectedUser.role} />
 
                       <InfoItem
                         icon={<CheckCircle2 size={18} />}
                         label="Account Status"
                         value={
-                          <StatusBadge value={selectedUser.status} />
+                          <StatusBadge status={selectedUser.account_status} />
+                        }
+                      />
+
+                      <InfoItem
+                        icon={<CheckCircle2 size={18} />}
+                        label="Approval Status"
+                        value={
+                          <StatusBadge status={selectedUser.approval_status} />
                         }
                       />
 
@@ -752,8 +821,8 @@ function AdminUsers() {
                         onChange={(e) => setRole(e.target.value)}
                         className="w-full border rounded p-2"
                       >
-                        <option value="tenant">Tenant</option>
-                        <option value="landlord">Landlord</option>
+                        <option value="Tenant">Tenant</option>
+                        <option value="Landlord">Landlord</option>
                         <option value="admin">Admin</option>
                       </select>
                     </div>
@@ -781,7 +850,7 @@ function AdminUsers() {
                       Cancel
                     </button>
 
-                    <button className="px-4 py-2 rounded-lg bg-blue-600 text-white">
+                    <button className="px-4 py-2 rounded-lg bg-blue-600 text-white" onClick={handleSaveChanges}>
                       Save Changes
                     </button>
                   </div>
@@ -808,7 +877,7 @@ function AdminUsers() {
                     >
                       Cancel
                     </button>
-                    <button className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
+                    <button className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700" onClick={handleApprove}>
                       Approve
                     </button>
                   </div>

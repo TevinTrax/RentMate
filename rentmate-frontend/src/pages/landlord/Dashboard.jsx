@@ -13,32 +13,64 @@ function LandlordDashboard() {
     useEffect(() => {
         const fetchProperties = async () => {
             try {
-            const token = localStorage.getItem("token");
+            const token = sessionStorage.getItem("token");
             const res = await fetch("http://localhost:5000/api/properties/myproperties", {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await res.json();
             if (res.ok) setProperties(data.properties);
-            else setError(data.error || "Failed to fetch properties");
+                else setError(data.error || "Failed to fetch properties");
             } catch (err) {
-            setError(err.message);
+                setError(err.message);
             } finally {
-            setLoadingProperties(false);
+                setLoadingProperties(false);
             }
         };
         fetchProperties();
     }, []);
 
+    // fetch user profile to get approval status
+    const [approvalStatus, setApprovalStatus] = useState(null);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const token = sessionStorage.getItem("token");
+
+            const res = await fetch("http://localhost:5000/api/users/profile", {
+            headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+            setApprovalStatus(data.approval_status);
+            }
+        };
+
+        fetchUser();
+
+        const interval = setInterval(fetchUser, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     return(
         <section className="w-full bg-gray-50">
-            <div className="pt-20 border border-red-500">
+            <div className="pt-20">
                 <div className="p-4">
                     <h1 className="text-3xl text-gray-800 font-bold">Dashboard Overview</h1>
                     <p className="text-md text-gray-700 py-1">Welcome back! Here's what's happening with RentMate today.</p>
                 </div>
 
+                {/* Approval Status */}
+                {approvalStatus !== "approved" && (
+                    <div className="bg-yellow-100 text-yellow-800 p-4 rounded-lg mb-6">
+                        Your account is awaiting admin approval. Some features are disabled.
+                    </div>
+                )}
+
                 {/* Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mt-2 gap-4 border border-red-500 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mt-2 gap-4 p-6">
 
                     {/* Total Users */}
                     <div className="hover:scale-105 transition-transform duration-200 flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-md">
@@ -201,7 +233,6 @@ function LandlordDashboard() {
                         </div>
                     </div>
                 </div>
-
 
                 <div className="grid grid-cols-1 md:grid-cols-2 border border-red-500 my-6 gap-4 p-4">
                     <div className="border border-gray-400 p-4 rounded-lg shadow-md bg-gray-50">

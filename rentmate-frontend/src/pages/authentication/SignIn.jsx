@@ -46,10 +46,11 @@ function SignIn() {
       // Save token & role
       sessionStorage.setItem("token", data.token);
       sessionStorage.setItem("role", data.user.role);
+      sessionStorage.setItem("approval_status", data.user.approval_status);
 
       // Redirect based on role (BACKEND role, not frontend)
       switch (data.user.role) {
-        case "Admin":
+        case "admin":
           navigate("/admin/dashboard");
           break;
 
