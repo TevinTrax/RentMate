@@ -19,8 +19,9 @@ export const addProperty = async (req, res) => {
     const {
       apartment_name,
       property_type,
-      first_name,
-      last_name,
+      total_units,
+      manager_first_name,
+      manager_last_name,
       country,
       city,
       area,
@@ -47,6 +48,7 @@ export const addProperty = async (req, res) => {
         landlord_id,
         apartment_name,
         property_type,
+        total_units,
         manager_first_name,
         manager_last_name,
         country,
@@ -68,7 +70,7 @@ export const addProperty = async (req, res) => {
       )
       VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,
-        $10,$11,$12,$13,$14,$15,$16,$17,$18,'draft', 'pending',NOW()
+        $10,$11,$12,$13,$14,$15,$16,$17,$18, $19, 'draft', 'pending',NOW()
       )
       RETURNING *;
       `,
@@ -76,8 +78,9 @@ export const addProperty = async (req, res) => {
         landlordId,
         apartment_name,
         property_type,
-        first_name,
-        last_name,
+        total_units,
+        manager_first_name,
+        manager_last_name,
         country,
         city,
         area,
@@ -394,6 +397,8 @@ export const postProperty = async (req, res) => {
       property_type,
       manager_first_name,
       manager_last_name,
+      property_status,
+      vacant_units,
       country,
       city,
       area,
@@ -414,7 +419,13 @@ export const postProperty = async (req, res) => {
       wifi,
       security,
       furnished,
-      rent_cycle
+      rent_cycle,
+      description,
+      caretaker_first_name,
+      caretaker_last_name,
+      caretaker_phone_number,
+      caretaker_alt_phone_number,
+      caretaker_id_number
     } = req.body;
 
     // Convert numeric fields
@@ -436,6 +447,8 @@ export const postProperty = async (req, res) => {
         property_type,
         manager_first_name,
         manager_last_name,
+        property_status,
+        vacant_units,
         country,
         city,
         area,
@@ -457,6 +470,12 @@ export const postProperty = async (req, res) => {
         security,
         furnished,
         rent_cycle,
+        description,
+        caretaker_first_name,
+        caretaker_last_name,
+        caretaker_phone_number,
+        caretaker_alt_phone_number,
+        caretaker_id_number,
         image_url,
         documents,
         status,
@@ -466,7 +485,7 @@ export const postProperty = async (req, res) => {
       VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
         $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-        $21,$22,$23,$24,$25,$26,$27,$28,$29,'posted','approved',NOW()
+        $21,$22,$23,$24,$25,$26,$27,$28,$29,$30, $31,$32,$33,$34,$35, $36, $37'posted','pending',NOW()
       )
       RETURNING *;
       `,
@@ -477,6 +496,8 @@ export const postProperty = async (req, res) => {
         property_type,
         manager_first_name,
         manager_last_name,
+        property_status,
+        vacant_units,
         country,
         city,
         area,
@@ -498,6 +519,12 @@ export const postProperty = async (req, res) => {
         security,
         furnished,
         rent_cycle,
+        description,
+        caretaker_first_name,
+        caretaker_last_name,
+        caretaker_phone_number,
+        caretaker_alt_phone_number,
+        caretaker_id_number,
         imagePath,
         documentPath
       ]
@@ -515,6 +542,8 @@ export const postProperty = async (req, res) => {
   }
 };
 
+
+// landlord posted properties
 export const getMyPostedProperties = async (req, res) => {
   try {
     const landlordId = req.user?.id;
@@ -538,5 +567,115 @@ export const getMyPostedProperties = async (req, res) => {
   } catch (error) {
     console.error("Error fetching posted properties:", error);
     return res.status(500).json({ error: "Server error: " + error.message });
+  }
+};
+
+
+// controllers/properties.controller.js
+
+// Fetch all posted properties waiting for admin approval
+export const getPendingProperties = async (req, res) => {
+  try {
+    // Ensure user exists and is admin
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Access denied. Admins only." });
+    }
+
+    const result = await pool.query(
+      `SELECT 
+          p.*, 
+          u.first_name AS landlord_first_name, 
+          u.last_name AS landlord_last_name, 
+          u.email AS landlord_email
+       FROM properties p
+       JOIN users u ON p.landlord_id = u.id
+       WHERE p.status = 'posted'
+       AND p.approval_status = 'pending'
+       ORDER BY p.created_at DESC`
+    );
+
+    return res.status(200).json({
+      success: true,
+      count: result.rowCount,
+      properties: result.rows
+    });
+
+  } catch (error) {
+    console.error("Error fetching pending properties:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Server error"
+    });
+  }
+};
+
+
+// properties posted public
+export const getPostedPropertiesPublic = async (req, res) => {
+  try {
+
+    const result = await pool.query(
+      `SELECT * FROM properties 
+       WHERE status = 'posted'
+       AND approval_status = 'approved'
+       ORDER BY created_at DESC`
+    );
+
+    return res.status(200).json({
+      success: true,
+      count: result.rows.length,
+      properties: result.rows
+    });
+
+  } catch (error) {
+    console.error("Error fetching posted properties:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
+// admin approves property
+export const approveProperty = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `UPDATE properties 
+       SET approval_status = 'approved' 
+       WHERE id = $1 
+       RETURNING *`,
+      [id]
+    );
+
+    res.json({
+      message: "Property approved successfully",
+      property: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// admin rejects property
+export const rejectProperty = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `UPDATE properties 
+       SET approval_status = 'rejected' 
+       WHERE id = $1 
+       RETURNING *`,
+      [id]
+    );
+
+    res.json({
+      message: "Property rejected",
+      property: result.rows[0]
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
   }
 };

@@ -68,7 +68,7 @@ function LandlordNavbar() {
 
           {/* Avatar */}
           <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-700">
-            {user?.first_name?.charAt(0)}
+            {user?.first_name?.charAt(0).toUpperCase()}
           </div>
 
           {/* User Info */}

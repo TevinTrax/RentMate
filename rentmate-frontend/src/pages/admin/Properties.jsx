@@ -12,10 +12,13 @@ import {
   Banknote,
   X,
   FileText,
-  Download
+  Download,
+  Layout
 } from "lucide-react";
 import CountUp from "react-countup";
 import { useEffect, useRef, useState } from "react";
+import PropertyFilters from "../../components/PropertyFilter";
+import AdminPendingProperties from "./PendingProperties";
 
 function AdminProperties() {
 
@@ -243,7 +246,6 @@ function AdminProperties() {
     }
   };
 
-
   // Edit property form state
 const [editFormData, setEditFormData] = useState({
   apartment_name: "",
@@ -317,6 +319,174 @@ const handleEditChange = (e) => {
     }
   };
 
+
+   // filtering and search state
+  const [filteredProperties, setFilteredProperties] = useState([]);
+
+  // update filtered properties whenever the main properties list changes
+  useEffect(() => {
+    setFilteredProperties(properties);
+  }, [properties]);
+
+
+// state for posted properties
+  const [postedProperties, setPostedProperties] = useState([]);
+  const [filteredPosted, setFilteredPosted] = useState([]);
+  const [loadingPosted, setLoadingPosted] = useState(true);
+  const [errorPosted, setErrorPosted] = useState("");
+
+
+     // state for opening the post property modal
+    const [openPostPropertyModal, setOpenPostPropertyModal] = useState(false);
+
+    // state for posting property
+    const [postFormData, setPostFormData] = useState({
+        apartment_name: "",
+        property_type: "",
+        property_status: "",
+        description: "",
+        manager_first_name: "",
+        manager_last_name: "",
+        caretaker_first_name: "",
+        caretaker_last_name: "",
+        caretaker_phone_number: "",
+        caretaker_alt_phone_number: "",
+        caretaker_id_number: "",
+        country: "",
+        city: "",
+        area: "",
+        street_address: "",
+        postal_code: "",
+        latitude: "",
+        longitude: "",
+        monthly_rent: "",
+        security_deposit: "",
+        bedrooms: "",
+        bathrooms: "",
+        size_sqft: "",
+        has_pool: false,
+        has_parking: false,
+        has_gym: false,
+        wifi: false,
+        security: false,
+        furnished: false,
+        image_url: null,      // Expecting File object from input
+        documents: null,      // Expecting File object(s)
+        rent_due_day: 1,
+        rent_due_type: "ON_OR_BEFORE",
+        rent_cycle: "MONTHLY"
+    });
+
+
+    // Handle change for text/number inputs
+    const handleInputChange = (e) => {
+        const { name, value, type, checked, files } = e.target;
+
+        setPostFormData((prev) => ({
+            ...prev,
+            [name]:
+                type === "checkbox"
+                    ? checked
+                    : type === "file"
+                    ? files[0]
+                    : value,
+        }));
+    };
+
+         // Handle form submit
+        const handlePostPropertySubmit = async (e) => {
+            e.preventDefault();
+
+            try {
+                const formData = new FormData();
+                const submitData = { ...postFormData };
+
+                // update lat/lng from live location
+                if (location) {
+                    submitData.latitude = location.latitude;
+                    submitData.longitude = location.longitude;
+                }
+
+                Object.keys(submitData).forEach((key) => {
+                let value = submitData[key];
+                if (value !== null && value !== undefined) {
+                    if (typeof value === "boolean") value = value ? "1" : "0";
+                    formData.append(key, value);
+                }
+                });
+
+                const token= sessionStorage.getItem("token");
+
+                const response = await fetch("http://localhost:5000/api/properties/post-property", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+                });
+
+                // Safely parse JSON
+                let data;
+                try {
+                data = await response.json();
+                } catch (err) {
+                throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
+                }
+
+                if (!response.ok) {
+                throw new Error(data.error || "Failed to post property");
+                }
+
+                console.log("Property posted successfully:", data);
+
+                // Close modal and reset only necessary fields
+                setOpenPostPropertyModal(false);
+
+                // Reset the fields you want to clear while keeping FormData reference
+                setPostFormData((prev) => ({
+                ...prev,
+                apartment_name: "",
+                property_type: "",
+                property_status: "",
+                description: "",
+                manager_first_name: "",
+                manager_last_name: "",
+                caretaker_first_name: "",
+                caretaker_last_name: "",
+                caretaker_phone_number: "",
+                caretaker_alt_phone_number: "",
+                caretaker_id_number: "",
+                country: "",
+                city: "",
+                area: "",
+                street_address: "",
+                postal_code: "",
+                latitude: "",
+                longitude: "",
+                monthly_rent: "",
+                security_deposit: "",
+                bedrooms: "",
+                bathrooms: "",
+                size_sqft: "",
+                has_pool: false,
+                has_parking: false,
+                has_gym: false,
+                wifi: false,
+                security: false,
+                furnished: false,
+                image_url: null,
+                documents: null,
+                rent_due_day: 1,
+                rent_due_type: "ON_OR_BEFORE",
+                rent_cycle: "MONTHLY",
+                }));
+
+            } catch (error) {
+                console.error("Error posting property:", error);
+                alert(error.message);
+            }
+        };
+
   return (
     <section className="w-full p-4">
       <div className="p-4">
@@ -333,7 +503,9 @@ const handleEditChange = (e) => {
           </div>
 
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 font-medium hover:bg-gray-200">
+            <button className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 font-medium hover:bg-gray-200"
+            onClick={() => setOpenPostPropertyModal(true)}
+            >
               <PlusSquare className="h-4 w-4" />
               Post Property
             </button>
@@ -406,36 +578,17 @@ const handleEditChange = (e) => {
 
         {/* Search */}
         <div className="mt-10">
-          <form className="flex flex-wrap items-center gap-4 rounded-lg bg-gray-50 p-4">
-
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
-              <input
-                type="text"
-                placeholder="Search properties..."
-                className="w-full rounded-lg px-10 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <select className="rounded-lg px-4 py-2 border border-gray-300">
-              <option>All Status</option>
-              <option>Approved</option>
-              <option>Pending</option>
-              <option>Cancelled</option>
-            </select>
-
-            <select className="rounded-lg px-4 py-2 border border-gray-300">
-              <option>All Types</option>
-              <option>Apartment</option>
-              <option>House</option>
-              <option>Studio</option>
-              <option>Bedsitter</option>
-            </select>
-
-          </form>
-
           {/* Properties Grid */}
           <div className="">
+            <div>
+              <PropertyFilters 
+              properties={postedProperties}
+              setFilteredProperties={setFilteredPosted}
+              />
+            </div>
+            <div className="my-2">
+              <h1 className="text-xl text-gray-800 font-bold">All Properties</h1>
+            </div>
             <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50">
 
               {loadingProperties ? (
@@ -455,18 +608,33 @@ const handleEditChange = (e) => {
                     className="border rounded-xl p-4 shadow transition bg-white"
                   >
 
-                    <div className="w-full h-40 rounded-lg mb-3 bg-gray-200 flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-40 rounded-lg mb-3 bg-gray-200 overflow-hidden relative">
+                        {/* Status Badge */}
+                        <span
+                            className={`absolute top-2 left-2 px-3 py-1 text-xs font-semibold rounded-full shadow capitalize
+                            ${
+                                property.status === "draft"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : property.status === "posted"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-700"
+                            }
+                            `}
+                        >
+                            {property.status}
+                        </span>
 
-                      {property.image_url ? (
-                        <img
-                          src={`http://localhost:5000/uploads/Images/${property.image_url}`}
-                          alt={property.apartment_name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <p className="text-gray-500 text-sm">No Image</p>
-                      )}
-
+                        {property.image_url ? (
+                            <img
+                            src={`http://localhost:5000/uploads/Images/${property.image_url}`}
+                            alt={property.apartment_name}
+                            className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                            <p className="text-gray-500 text-sm">No Image</p>
+                            </div>
+                        )}
                     </div>
 
                     <h3 className="text-lg font-semibold text-gray-800">
@@ -517,6 +685,20 @@ const handleEditChange = (e) => {
 
             </div>
           </div>
+
+
+            <div className="mt-7 container mx-auto">
+                <PropertyFilters
+                    properties={postedProperties}
+                    setFilteredProperties={setFilteredPosted}
+                />
+
+                <h1 className="text-2xl font-bold text-gray-800 mb-4">
+                    Posted Properties
+                </h1>
+
+                <AdminPendingProperties />
+            </div>
 
           {openViewDetails && selectedProperty && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1248,6 +1430,785 @@ const handleEditChange = (e) => {
               </div>
           </div>
       )}
+
+
+            {/* Post Property Modal */}
+            {openPostPropertyModal &&(
+                <div className="w-full inset-0 fixed z-50 flex items-center justify-center bg-black/40">
+                    <div className="container mx-auto bg-gray-50 rounded-lg shadow-md p-4 max-h-[95vh]">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-xl text-green-700 font-bold">Post Property</h1>
+                            </div>
+                            <div>
+                                <button onClick={() => setOpenPostPropertyModal(false)}><X size={24} className="text-red-500 font-bold"/></button>
+                            </div>
+                        </div>
+
+                        <div className="mt-4">
+                            <form className="w-full" onSubmit={handlePostPropertySubmit}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 overflow-y-scroll max-h-[70vh]">
+                                    <div className="">
+                                        <div className="border border-gray-200 rounded-xl bg-white p-6 space-y-8 shadow-sm">
+                                            {/* Header */}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                                                    <Building2 size={22} className="text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg font-semibold text-gray-800">
+                                                        Property Basic Information
+                                                    </h2>
+                                                    <p className="text-sm text-gray-500">
+                                                        Tell us about your property
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Property Info Grid */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {/* Apartment Name */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Property Name
+                                                    </label>
+                                                    <input
+                                                        id="apartment_name"
+                                                        name="apartment_name"
+                                                        type="text"
+                                                        placeholder="Enter your apartment name"
+                                                        value={postFormData.apartment_name}
+                                                        required
+                                                        onChange={handleInputChange}
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    />
+                                                </div>
+
+                                                {/* Property Type */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Property Type
+                                                    </label>
+                                                    <select
+                                                        id="property_type"
+                                                        name="property_type"
+                                                        onChange={handleInputChange}
+                                                        value={postFormData.property_type}
+                                                        required
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    >
+                                                        <option value="">Select property type</option>
+                                                        <option value="apartment">Apartment</option>
+                                                        <option value="bedsitter">Bedsitter</option>
+                                                        <option value="studio">Studio</option>
+                                                        <option value="house">House</option>
+                                                    </select>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Property Status
+                                                    </label>
+                                                    <select
+                                                        id="property_status"
+                                                        name="property_status"
+                                                        onChange={handleInputChange}
+                                                        value={postFormData.property_status}
+                                                        required
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    >
+                                                        <option value="">Property Status</option>
+                                                        <option value="Vacant">Vacant</option>
+                                                        <option value="Occupied">Occupied</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            {/* Divider */}
+                                            <div className="border-t border-gray-100 pt-6">
+                                                <h3 className="text-sm font-semibold text-gray-800 mb-4">
+                                                    Property Manager/ Owner Information
+                                                </h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    {/* First Name */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            First Name
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter first name"
+                                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                            id="manager_first_name"
+                                                            name="manager_first_name"
+                                                            onChange={handleInputChange}
+                                                            value={postFormData.manager_first_name}
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    {/* Last Name */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Last Name
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter last name"
+                                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                            id="manager_last_name"
+                                                            name="manager_last_name"
+                                                            onChange={handleInputChange}
+                                                            value={postFormData.manager_last_name}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t border-gray-100 pt-6">
+                                                <h3 className="text-sm font-semibold text-gray-800 mb-4">
+                                                    Property Caretaker Information
+                                                </h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    {/* First Name */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            First Name
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter first name"
+                                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                            id="caretaker_first_name"
+                                                            name="caretaker_first_name"
+                                                            onChange={handleInputChange}
+                                                            value={postFormData.caretaker_first_name}
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    {/* Last Name */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Last Name
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter last name"
+                                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                            id="caretaker_last_name"
+                                                            name="caretaker_last_name"
+                                                            onChange={handleInputChange}
+                                                            value={postFormData.caretaker_last_name}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                                                    {/* phone number */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Phone Number
+                                                        </label>
+                                                        <input
+                                                            type="tel"
+                                                            placeholder="e.g 0700000000"
+                                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                            id="caretaker_phone_number"
+                                                            name="caretaker_phone_number"
+                                                            onChange={handleInputChange}
+                                                            value={postFormData.caretaker_phone_number}
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    {/* alt phone number */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Alt Phone Number
+                                                        </label>
+                                                        <input
+                                                            type="tel"
+                                                            placeholder="e.g 0700000000"
+                                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                            id="caretaker_alt_phone_number"
+                                                            name="caretaker_alt_phone_number"
+                                                            value={postFormData.caretaker_alt_phone_number}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            ID Number
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            placeholder=""
+                                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                            id="caretaker_id_number"
+                                                            name="caretaker_id_number"
+                                                            value={postFormData.caretaker_id_number}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-2">
+                                                    {/* Property Description */}
+                                                    <div className="space-y-2">
+                                                        <label className="block text-sm font-semibold text-gray-700">
+                                                            Property Description
+                                                        </label>
+
+                                                        <textarea
+                                                            placeholder="Write a detailed description of the property..."
+                                                            rows="4"
+                                                            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm 
+                                                            focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500
+                                                            resize-none transition"
+                                                            id="description"
+                                                            name="description"
+                                                            value={postFormData.description}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                        ></textarea>
+
+                                                        <p className="text-xs text-gray-500">
+                                                            Provide details such as amenities, nearby facilities, and special features.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border border-gray-200 rounded-xl bg-white p-6 space-y-8 shadow-sm mt-6">
+                                            {/* Header */}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                                                    <Layout size={20} className="text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg font-semibold text-gray-800">
+                                                        Property Features & Amenities
+                                                    </h2>
+                                                    <p className="text-sm text-gray-500">
+                                                        Highlight the key features of your property and the amenities available to tenants, such as number of bedrooms, bathrooms, parking, pool, gym, and more.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* New Features: Bedrooms, Bathrooms, Size */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Bedrooms
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    placeholder="Number of bedrooms"
+                                                    id="bedrooms"
+                                                    name="bedrooms"
+                                                    onChange={handleInputChange}
+                                                    value={postFormData.bedrooms}
+                                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Bathrooms
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    placeholder="Number of bathrooms"
+                                                    id="bathrooms"
+                                                    name="bathrooms"
+                                                    onChange={handleInputChange}
+                                                    value={postFormData.bathrooms}
+                                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Size (sqft)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    placeholder="e.g 1200"
+                                                    id="size_sqft"
+                                                    name="size_sqft"
+                                                    onChange={handleInputChange}
+                                                    value={postFormData.size_sqft}
+                                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                />
+                                            </div>
+
+                                            {/* Amenities */}
+                                            <div className="md:col-span-2 grid grid-cols-2 gap-4 mt-2">
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                    type="checkbox"
+                                                    id="has_pool"
+                                                    name="has_pool"
+                                                    onChange={handleInputChange}
+                                                    checked={postFormData.has_pool || false}
+                                                    className="rounded text-green-500 focus:ring-green-500"
+                                                    />
+                                                    Pool
+                                                </label>
+
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                    type="checkbox"
+                                                    id="has_parking"
+                                                    name="has_parking"
+                                                    onChange={handleInputChange}
+                                                    checked={postFormData.has_parking || false}
+                                                    className="rounded text-green-500 focus:ring-green-500"
+                                                    />
+                                                    Parking
+                                                </label>
+
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                    type="checkbox"
+                                                    id="has_gym"
+                                                    name="has_gym"
+                                                    onChange={handleInputChange}
+                                                    checked={postFormData.has_gym || false}
+                                                    className="rounded text-green-500 focus:ring-green-500"
+                                                    />
+                                                    Gym
+                                                </label>
+
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                    type="checkbox"
+                                                    id="wifi"
+                                                    name="wifi"
+                                                    onChange={handleInputChange}
+                                                    checked={postFormData.wifi || false}
+                                                    className="rounded text-green-500 focus:ring-green-500"
+                                                    />
+                                                    Wi-Fi
+                                                </label>
+
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                    type="checkbox"
+                                                    id="security"
+                                                    name="security"
+                                                    onChange={handleInputChange}
+                                                    checked={postFormData.security || false}
+                                                    className="rounded text-green-500 focus:ring-green-500"
+                                                    />
+                                                    24/7 Security
+                                                </label>
+
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                    type="checkbox"
+                                                    id="furnished"
+                                                    name="furnished"
+                                                    onChange={handleInputChange}
+                                                    checked={postFormData.furnished || false}
+                                                    className="rounded text-green-500 focus:ring-green-500"
+                                                    />
+                                                    Furnished
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    <div className="">
+                                        <div className="border border-gray-200 rounded-xl bg-white p-6 space-y-6 shadow-sm mt-6">
+                                            {/* Header */}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                                                    <Banknote size={22} className="text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg font-semibold text-gray-800">
+                                                        Rental Details
+                                                    </h2>
+                                                    <p className="text-sm text-gray-500">
+                                                        Configure rent, deposit and payment schedule
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Pricing Grid */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                                {/* Monthly Rent */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Monthly Rent
+                                                    </label>
+
+                                                    <div className="flex items-center border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition">
+                                                        <span className="px-3 text-gray-500 text-sm font-medium">
+                                                        KES
+                                                        </span>
+                                                        <input
+                                                        id="monthly_rent"
+                                                        name="monthly_rent"
+                                                        type="number"
+                                                        placeholder="0.00"
+                                                        className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent focus:outline-none"
+                                                        onChange={handleInputChange}
+                                                        value={postFormData.monthly_rent}
+                                                        required
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Security Deposit */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Security Deposit
+                                                    </label>
+
+                                                    <div className="flex items-center border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition">
+                                                        <span className="px-3 text-gray-500 text-sm font-medium">
+                                                        KES
+                                                        </span>
+                                                        <input
+                                                        id="security_deposit"
+                                                        name="security_deposit"
+                                                        type="number"
+                                                        placeholder="0.00"
+                                                        className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent focus:outline-none"
+                                                        onChange={handleInputChange}
+                                                        value={postFormData.security_deposit}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                                {/* Due Day */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Rent Due Day
+                                                    </label>
+                                                    <select
+                                                        id="rent_due_day"
+                                                        name="rent_due_day"
+                                                        value={postFormData.rent_due_day || ""}
+                                                        onChange={handleInputChange}
+                                                        required
+                                                        className="w-full py-2 px-4 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
+                                                    >
+                                                        <option value="" disabled>Select day</option>
+                                                        {[...Array(31)].map((_, i) => (
+                                                            <option key={i+1} value={i+1}>
+                                                                {i+1}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Rent Due Type
+                                                    </label>
+                                                    <select
+                                                        id="rent_due_type"
+                                                        name="rent_due_type"
+                                                        value={postFormData.rent_due_type}
+                                                        onChange={handleInputChange}
+                                                        className="w-full py-2 px-4 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
+                                                        >
+                                                        <option value="ON">On this day</option>
+                                                        <option value="ON_OR_BEFORE">On or before this day</option>
+                                                        <option value="BEFORE">Before this day</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border border-gray-200 rounded-xl bg-white p-6 space-y-8 shadow-sm mt-6">
+                                            {/* Header */}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                                                    <MapPin size={22} className="text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg font-semibold text-gray-800">
+                                                        Location Details
+                                                    </h2>
+                                                    <p className="text-sm text-gray-500">
+                                                        Provide the property’s full address and area information
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {/* Location Grid */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                                {/* Country */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Country
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g Kenya"
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                        id="country"
+                                                        name="country"
+                                                        onChange={handleInputChange}
+                                                        value={postFormData.country}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                {/* City */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        City
+                                                    </label>
+                                                    <input
+                                                        id="city"
+                                                        name="city"
+                                                        onChange={handleInputChange}
+                                                        value={postFormData.city}
+                                                        required
+                                                        type="text"
+                                                        placeholder="e.g Nairobi"
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    />
+                                                </div>
+
+                                                {/* Area */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Area / Estate
+                                                    </label>
+                                                    <input
+                                                        id="area"
+                                                        name="area"
+                                                        onChange={handleInputChange}
+                                                        type="text"
+                                                        value={postFormData.area}
+                                                        required
+                                                        placeholder="e.g Westlands"
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    />
+                                                </div>
+
+                                                {/* Street */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Street Address
+                                                    </label>
+                                                    <input
+                                                        id="street_address"
+                                                        name="street_address"
+                                                        onChange={handleInputChange}
+                                                        value={postFormData.street_address}
+                                                        required
+                                                        type="text"
+                                                        placeholder="e.g 45 Ngong Road"
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    />
+                                                </div>
+
+                                                {/* Postal Code */}
+                                                <div className="md:col-span-1">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Postal Code
+                                                    </label>
+                                                    <input
+                                                        id="postal_code"
+                                                        name="postal_code"
+                                                        onChange={handleInputChange}
+                                                        value={postFormData.postal_code}
+                                                        required
+                                                        type="text"
+                                                        placeholder="e.g 00100"
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Map Section */}
+                                            <div
+                                                onClick={handleGetLocation}
+                                                className="border border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-green-400 hover:bg-green-50 transition cursor-pointer"
+                                            >
+                                                <MapPin size={28} className="mx-auto text-gray-400 mb-2" />
+
+                                                {locationLoading ? (
+                                                    <p className="text-sm font-medium text-green-600">
+                                                        Fetching your live location...
+                                                    </p>
+                                                ) : location ? (
+                                                    <>
+                                                        <p className="text-sm font-semibold text-green-600">
+                                                            Location Captured Successfully
+                                                        </p>
+                                                        <p className="text-xs text-gray-600 mt-1">
+                                                            Lat: {location.latitude.toFixed(5)}
+                                                        </p>
+                                                        <p className="text-xs text-gray-600">
+                                                            Lng: {location.longitude.toFixed(5)}
+                                                        </p>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <p className="text-sm font-medium text-gray-700">
+                                                            Click to get your live location
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Helps tenants find your property faster
+                                                        </p>
+                                                    </>
+                                                )}
+
+                                                {locationError && (
+                                                    <p className="text-xs text-red-500 mt-2">
+                                                        {locationError}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="border border-gray-200 rounded-xl bg-white p-6 space-y-6 shadow-sm mt-6">  
+                                            {/* Header */}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                                                    <ImagePlus size={22} className="text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg font-semibold text-gray-800">
+                                                        Property Image
+                                                    </h2>
+                                                    <p className="text-sm text-gray-500">
+                                                        Upload a clear image of your apartment
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Upload Area */}
+                                            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-green-400 hover:bg-green-50 transition duration-200">
+                                                <div className="flex flex-col items-center justify-center text-center px-4">
+                                                    {postFormData.image_url ? (
+                                                    <>
+                                                        <ImagePlus size={28} className="text-green-500 mb-2" />
+                                                        <p className="text-sm font-semibold text-green-600">
+                                                            {postFormData.image_url.name}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            File selected successfully
+                                                        </p>
+                                                    </>
+                                                    ) : (
+                                                    <>
+                                                        <ImagePlus size={28} className="text-gray-400 mb-2" />
+                                                        <p className="text-sm font-medium text-gray-700">
+                                                            Click to upload or drag and drop
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            PNG, JPG up to 5MB
+                                                        </p>
+                                                    </>
+                                                    )}
+                                                </div>
+
+                                                <input 
+                                                    id="image_url"
+                                                    name="image_url"
+                                                    accept="image/png, image/jpeg"
+                                                    onChange={handleInputChange}
+                                                    type="file" 
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </div>
+
+                                        <div className="border border-gray-200 rounded-xl bg-white p-6 space-y-6 shadow-sm mt-6">  
+                                            {/* Header */}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                                                    <FileText size={22} className="text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-lg font-semibold text-gray-800">
+                                                        Documents
+                                                    </h2>
+                                                    <p className="text-sm text-gray-500">
+                                                        Ownership Docs
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Upload Area */}
+                                            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-green-400 hover:bg-green-50 transition duration-200">
+                                                <div className="flex flex-col items-center justify-center text-center px-4">
+                                                    {postFormData.documents ? (
+                                                    <>
+                                                        <FileText size={28} className="text-green-500 mb-2" />
+                                                        <p className="text-sm font-semibold text-green-600">
+                                                            {postFormData.documents.name}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Document selected successfully
+                                                        </p>
+                                                    </>
+                                                    ) : (
+                                                    <>
+                                                        <Download size={28} className="text-gray-400 mb-2" />
+                                                        <p className="text-sm font-medium text-gray-700">
+                                                            Drop PDF here or click to upload
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            PDF up to 10MB
+                                                        </p>
+                                                    </>
+                                                    )}
+                                                </div>
+
+                                                <input 
+                                                    id="documents"
+                                                    name="documents"
+                                                    onChange={handleInputChange}
+                                                    type="file" 
+                                                    accept="application/pdf"
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end mt-4 gap-4 border-t border-gray-200 pt-4">
+                                    <div>
+                                        <button type="submit" name="action" value="draft" className="bg-gray-50 hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-lg transition duration-200 border border-gray-300">
+                                            <Save size={18} className="inline mr-2"/>
+                                            Save Draft
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button type="submit" name="action" value="post" className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                                            Post Property
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
     </section>
   );
 }

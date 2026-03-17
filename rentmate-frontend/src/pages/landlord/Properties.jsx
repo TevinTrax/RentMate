@@ -11,8 +11,9 @@ function LandlordProperties() {
     const [formData, setFormData] = useState({
         apartment_name: "",
         property_type: "",
-        first_name: "",
-        last_name: "",
+        total_units:"",
+        manager_first_name: "",
+        manager_last_name: "",
         country: "",
         city: "",
         area: "",
@@ -79,8 +80,8 @@ function LandlordProperties() {
             setFormData({
             apartment_name: "",
             property_type: "",
-            first_name: "",
-            last_name: "",
+            manager_first_name: "",
+            manager_last_name: "",
             country: "",
             city: "",
             area: "",
@@ -129,22 +130,43 @@ function LandlordProperties() {
 
     const fetchProperties = async () => {
         try {
-        const token = sessionStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/properties/myproperties", {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+            setLoadingProperties(true);
 
-        const data = await res.json();
-        if (res.ok) setProperties(data.properties);
-        else setError(data.error || "Failed to fetch properties");
+            const token = sessionStorage.getItem("token");
+
+            if (!token) {
+                setError("No authentication token found");
+                return;
+            }
+
+            const res = await fetch(
+                "http://localhost:5000/api/properties/myproperties",
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                }
+            );
+
+            const data = await res.json();
+
+            if (res.ok) {
+                // these are draft properties from backend
+                setProperties(data.properties || []);
+            } else {
+                setError(data.error || "Failed to fetch draft properties");
+            }
+
         } catch (err) {
-        setError(err.message);
+            setError(err.message);
         } finally {
-        setLoadingProperties(false);
+            setLoadingProperties(false);
         }
     };
 
-    // fetch properties on component mount
+    // fetch draft properties when component loads
     useEffect(() => {
         fetchProperties();
     }, []);
@@ -321,6 +343,7 @@ function LandlordProperties() {
         apartment_name: "",
         property_type: "",
         property_status: "",
+        vacant_units:"",
         description: "",
         manager_first_name: "",
         manager_last_name: "",
@@ -395,23 +418,23 @@ function LandlordProperties() {
                 const token= sessionStorage.getItem("token");
 
                 const response = await fetch("http://localhost:5000/api/properties/post-property", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
                 });
 
                 // Safely parse JSON
                 let data;
                 try {
-                data = await response.json();
+                    data = await response.json();
                 } catch (err) {
-                throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
+                    throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
                 }
 
                 if (!response.ok) {
-                throw new Error(data.error || "Failed to post property");
+                    throw new Error(data.error || "Failed to post property");
                 }
 
                 console.log("Property posted successfully:", data);
@@ -425,6 +448,7 @@ function LandlordProperties() {
                 apartment_name: "",
                 property_type: "",
                 property_status: "",
+                vacant_units:"",
                 description: "",
                 manager_first_name: "",
                 manager_last_name: "",
@@ -464,311 +488,396 @@ function LandlordProperties() {
             }
         };
 
-        // fetch posted properties
-        const fetchPostedProperties = async (token) => {
+
+       // state for posted properties
+        const [postedProperties, setPostedProperties] = useState([]);
+        const [loadingPosted, setLoadingPosted] = useState(true);
+        const [errorPosted, setErrorPosted] = useState("");
+        const [filteredPosted, setFilteredPosted] = useState([]);
+
+        const fetchPostedProperties = async () => {
             try {
-                const response = await fetch("https://localhost:5000/api/properties/mypostedproperties", {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`, // Pass the landlord's token
-                    "Accept": "application/json",
-                },
-                });
+                setLoadingPosted(true);
+                const token = sessionStorage.getItem("token");
+                if (!token) throw new Error("No token found");
 
-                if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || "Failed to fetch posted properties");
+                const res = await fetch(
+                "http://localhost:5000/api/properties/mypostedproperties",
+                {
+                    method: "GET",
+                    headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                    },
                 }
+                );
 
-                const data = await response.json();
-                console.log("Posted properties:", data);
-                return data.properties; // returns array of posted properties
+                const data = await res.json();
 
-            } catch (error) {
-                console.error("Error fetching posted properties:", error);
-                return []; // return empty array on error to avoid breaking UI
+                if (res.ok) {
+                setPostedProperties(data.properties || []);
+                setFilteredPosted(data.properties || []);
+                } else {
+                setErrorPosted(data.error || "Failed to fetch posted properties");
+                }
+            } catch (err) {
+                console.error(err);
+                setErrorPosted(err.message);
+            } finally {
+                setLoadingPosted(false);
             }
         };
-
         useEffect(() => {
-            const loadProperties = async () => {
-                const token = sessionStorage.getItem("token"); // or wherever you store it
-                const postedProps = await fetchPostedProperties(token);
-                setPostedProperties(postedProps);
-            };
-
-            loadProperties();
+            fetchPostedProperties();
         }, []);
+
 
   return (
     <section className="w-full">
-      <div className="pt-20">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4">
-          <div>
-            <h1 className="text-gray-800 text-3xl font-bold">Property Management</h1>
-            <p className="text-md text-gray-600 py-1">Manage all property listings and maintenance</p>
-          </div>
-          <div className="flex items-center justify-end gap-4">
-            <button className={`px-4 py-2 flex gap-2 rounded-lg font-semibold text-sm bg-blue-800 hover:bg-blue-900 text-gray-50
-                ${approvalStatus !== "approved"
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                }`}
-                onClick={() => setOpenPostPropertyModal(true)}
-                disabled={approvalStatus !== "approved"
-            }>
-              <PlusSquare size={18}/>Post Property
-            </button>
-            <button
-                className={`px-4 py-2 flex gap-2 rounded-lg bg-green-500 hover:bg-green-600 text-gray-50 text-sm font-semibold 
-                    ${approvalStatus !== "approved"
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700"
-                    }`
-                }
-              onClick={() => setShowAddProperty(true)}
-              disabled={approvalStatus !== "approved"
-            }>
-              <PlusCircle size={18}/>Add Property
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 p-6">
-            <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center"><Building2 size={28} className="text-blue-900"/></div>
+        <div className="pt-20">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4">
                 <div>
-                    <h2 className="text-md font-semibold text-gray-800">Total Properties</h2>
-                    <p className="text-2xl font-bold text-gray-800">{properties.length}</p>
+                    <h1 className="text-gray-800 text-3xl font-bold">Property Management</h1>
+                    <p className="text-md text-gray-600 py-1">Manage all property listings and maintenance</p>
+                </div>
+                <div className="flex items-center justify-end gap-4">
+                    <button className={`px-4 py-2 flex gap-2 rounded-lg font-semibold text-sm bg-blue-800 hover:bg-blue-900 text-gray-50
+                        ${approvalStatus !== "approved"
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        }`}
+                        onClick={() => setOpenPostPropertyModal(true)}
+                        disabled={approvalStatus !== "approved"
+                    }>
+                    <PlusSquare size={18}/>Post Property
+                    </button>
+                    <button
+                        className={`px-4 py-2 flex gap-2 rounded-lg bg-green-500 hover:bg-green-600 text-gray-50 text-sm font-semibold 
+                            ${approvalStatus !== "approved"
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-blue-600 hover:bg-blue-700"
+                            }`
+                        }
+                    onClick={() => setShowAddProperty(true)}
+                    disabled={approvalStatus !== "approved"
+                    }>
+                    <PlusCircle size={18}/>Add Property
+                    </button>
+                </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 p-6">
+                <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
+                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center"><Building2 size={28} className="text-blue-900"/></div>
+                    <div>
+                        <h2 className="text-md font-semibold text-gray-800">Total Properties</h2>
+                        <p className="text-2xl font-bold text-gray-800">{properties.length}</p>
+                    </div>
+                </div>
+                <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
+                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center"><Verified size={28} className="text-blue-500"/></div>
+                    <div>
+                    <h2 className="text-md font-semibold text-gray-800">Occupied Units</h2>
+                    <p className="text-2xl font-bold text-gray-800">200</p>
+                    </div>
+                </div>
+            <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
+                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center"><DoorOpen size={28} className="text-green-500"/></div>
+                <div>
+                <h2 className="text-md font-semibold text-gray-800">Vacant Units</h2>
+                <p className="text-2xl font-bold text-gray-800">25</p>
                 </div>
             </div>
             <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center"><Verified size={28} className="text-blue-500"/></div>
+                <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center"><Clock size={28} className="text-yellow-500"/></div>
                 <div>
-                <h2 className="text-md font-semibold text-gray-800">Occupied Units</h2>
-                <p className="text-2xl font-bold text-gray-800">200</p>
+                <h2 className="text-md font-semibold text-gray-800">Pending Approval</h2>
+                <p className="text-2xl font-bold text-gray-800">25</p>
                 </div>
             </div>
-          <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
-            <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center"><DoorOpen size={28} className="text-green-500"/></div>
-            <div>
-              <h2 className="text-md font-semibold text-gray-800">Vacant Units</h2>
-              <p className="text-2xl font-bold text-gray-800">25</p>
             </div>
-          </div>
-          <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
-            <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center"><Clock size={28} className="text-yellow-500"/></div>
-            <div>
-              <h2 className="text-md font-semibold text-gray-800">Pending Approval</h2>
-              <p className="text-2xl font-bold text-gray-800">25</p>
-            </div>
-          </div>
-        </div>
 
-        {/* Properties Grid */}
-        <div className="p-4">
-            <div>
-                <PropertyFilters 
-                    properties={properties}
-                    setFilteredProperties={setFilteredProperties}
-                />
+            {/* Properties Grid */}
+            <div className="p-4">
+                <div>
+                    <PropertyFilters 
+                        properties={properties}
+                        setFilteredProperties={setFilteredProperties}
+                    />
+                </div>
+
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">My Properties</h1>
+                </div>
+
+                <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50">
+
+                    {loadingProperties ? (
+                        <p className="text-gray-500">Loading properties...</p>
+
+                    ) : error ? (
+                        <p className="text-red-500">{error}</p>
+
+                    ) : filteredProperties.length === 0 ? (
+                        <p className="text-gray-500">No properties found</p>
+
+                    ) : (
+                        filteredProperties.map((property) => (
+                            <div key={property.id} className="border rounded-xl p-4 shadow transition bg-white">
+                                <div className="w-full h-40 rounded-lg mb-3 bg-gray-200 overflow-hidden relative">
+
+                                    {/* Status Badge */}
+                                    <span
+                                        className={`absolute top-2 left-2 px-3 py-1 text-xs font-semibold rounded-full shadow
+                                        ${property.status === "draft"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-green-100 text-green-700"
+                                        }`}
+                                    >
+                                        {property.status.charAt(0).toUpperCase() + property.status?.slice(1)}
+                                    </span>
+
+                                    {property.image_url ? (
+                                        <img
+                                            src={`http://localhost:5000/uploads/Images/${property.image_url}`}
+                                            alt={property.apartment_name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <p className="text-gray-500 text-sm">No Image</p>
+                                        </div>
+                                    )}
+
+                                </div>
+
+                                <h3 className="text-lg font-semibold text-gray-800">
+                                    {property.apartment_name}
+                                </h3>
+
+                                <p className="text-sm text-gray-500">
+                                    {property.property_type}
+                                </p>
+
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {property.city}, {property.area}
+                                </p>
+
+                                <p className="text-sm text-gray-800 mt-2 font-semibold">
+                                    KES {property.monthly_rent?.toLocaleString() || 0}
+                                </p>
+
+                                <div className="flex items-center justify-between mt-2">
+
+                                    <button
+                                        className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-100 hover:scale-105"
+                                        onClick={() => {
+                                            setOpenViewDetails(true);
+                                            setSelectedProperty(property);
+                                        }}
+                                    >
+                                        View Details
+                                    </button>
+
+                                    <button
+                                        className="px-4 py-2 rounded-lg text-sm font-bold text-gray-50 bg-green-500 hover:bg-green-600 hover:scale-105"
+                                        onClick={() => {
+                                            setSelectedProperty(property);
+                                            setEditFormData({
+                                                apartment_name: property.apartment_name || "",
+                                                property_type: property.property_type || "",
+                                                city: property.city || "",
+                                                area: property.area || "",
+                                                street_address: property.street_address || "",
+                                                monthly_rent: property.monthly_rent || "",
+                                                security_deposit: property.security_deposit || "",
+                                                description: property.description || "",
+                                                image_url: null,
+                                                documents: null
+                                            });
+
+                                            setOpenEditProperty(true);
+                                        }}
+                                    >
+                                        Edit Property
+                                    </button>
+
+                                </div>
+
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
-            <div>
-                <h1 className="text-2xl font-bold text-gray-800">My Properties</h1>
-            </div>
-            <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50">
-                {loadingProperties ? (
-                    <p className="text-gray-500">Loading properties...</p>
-                ) : error ? (
-                    <p className="text-red-500">{error}</p>
-                ) : properties.length === 0 ? (
-                    <p className="text-gray-500">No properties found</p>
-                ) : (
-                    properties.map((property) => (
-                    <div key={property.id} className="border rounded-xl p-4 shadow transition bg-white">
-                        <div className="w-full h-40 rounded-lg mb-3 bg-gray-200 flex items-center justify-center overflow-hidden">
-                        {property.image_url ? (
-                            <img
-                            src={`http://localhost:5000/uploads/Images/${property.image_url}`}
-                            alt={property.apartment_name}
-                            className="w-full h-full object-cover"
-                            />
+
+
+            {/* Posted Properties Grid */}
+            <div className="p-4">
+                <div>
+                    <PropertyFilters 
+                    properties={postedProperties}
+                    setFilteredProperties={setFilteredPosted}
+                    />
+                </div>
+
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">Posted Properties</h1>
+                </div>
+
+                <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50">
+                    {loadingPosted ? (
+                        <p className="text-gray-500">Loading properties...</p>
+                        ) : errorPosted ? (
+                        <p className="text-red-500">{errorPosted}</p>
+                        ) : filteredPosted.length === 0 ? (
+                        <p className="text-gray-500">No properties found</p>
                         ) : (
-                            <p className="text-gray-500 text-sm">No Image</p>
-                        )}
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-800">{property.apartment_name}</h3>
-                        <p className="text-sm text-gray-500">{property.property_type}</p>
-                        <p className="text-sm text-gray-600 mt-1">{property.city}, {property.area}</p>
-                        <p className="text-sm text-gray-800 mt-2 font-semibold">
-                        KES {property.monthly_rent?.toLocaleString() || 0}
-                        </p>
-                        <div className="flex items-center justify-between mt-2">
-                            <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-100 hover:scale-105" onClick={() => {setOpenViewDetails(true); setSelectedProperty(property);}}>View Details</button>
-                            <button className="px-4 py-2 rounded-lg text-sm font-bold text-gray-50 bg-green-500 hover:bg-green-600 hover:scale-105" 
-                            onClick={() => {
-                                setSelectedProperty(property);
-                                setEditFormData({
-                                    apartment_name: property.apartment_name || "",
-                                    property_type: property.property_type || "",
-                                    city: property.city || "",
-                                    area: property.area || "",
-                                    street_address: property.street_address || "",
-                                    monthly_rent: property.monthly_rent || "",
-                                    security_deposit: property.security_deposit || "",
-                                    description: property.description || "",
-                                    image_url: null,
-                                    documents: null
-                                });
+                        filteredPosted.map((property) => (
+                            <div key={property.id} className="border rounded-xl p-4 shadow transition bg-white">
+                                <div className="w-full h-40 rounded-lg mb-3 bg-gray-200 overflow-hidden relative">
+                                    {/* Approval Status Badge */}
+                                    <span
+                                        className={`absolute top-2 right-2 px-3 py-1 text-xs font-semibold rounded-full shadow capitalize
+                                        ${
+                                            property.approval_status === "approved"
+                                                ? "bg-green-100 text-green-700"
+                                                : property.approval_status === "pending"
+                                                ? "bg-yellow-100 text-yellow-700"
+                                                : property.approval_status === "rejected"
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-gray-100 text-gray-700"
+                                        }`}
+                                    >
+                                        {property.approval_status}
+                                    </span>
 
-                                setOpenEditProperty(true);
-                            }}
-                            >Edit Property
-                            </button>
-                        </div>
-                    </div>
-                    ))
-                )}
+                                    {property.image_url ? (
+                                        <img
+                                            src={`http://localhost:5000/uploads/Images/${property.image_url}`}
+                                            alt={property.apartment_name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <p className="text-gray-500 text-sm">No Image</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <h3 className="text-lg font-semibold text-gray-800">{property.apartment_name}</h3>
+                                <p className="text-sm text-gray-500">{property.property_type}</p>
+                                <p className="text-sm text-gray-600 mt-1">{property.city}, {property.area}</p>
+                                <p className="text-sm text-gray-800 mt-2 font-semibold">
+                                    KES {property.monthly_rent?.toLocaleString() || 0}
+                                </p>
+
+                                <div className="flex items-center justify-between mt-2">
+                                    <button
+                                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-100 hover:scale-105"
+                                    onClick={() => {setOpenViewDetails(true); setSelectedProperty(property);}}
+                                    >
+                                    View Details
+                                    </button>
+
+                                    <button
+                                    className="px-4 py-2 rounded-lg text-sm font-bold text-gray-50 bg-green-500 hover:bg-green-600 hover:scale-105"
+                                    onClick={() => {
+                                        setSelectedProperty(property);
+                                        setEditFormData({
+                                        apartment_name: property.apartment_name || "",
+                                        property_type: property.property_type || "",
+                                        city: property.city || "",
+                                        area: property.area || "",
+                                        street_address: property.street_address || "",
+                                        monthly_rent: property.monthly_rent || "",
+                                        security_deposit: property.security_deposit || "",
+                                        description: property.description || "",
+                                        image_url: null,
+                                        documents: null
+                                        });
+
+                                        setOpenEditProperty(true);
+                                    }}
+                                    >
+                                    Edit Property
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
         </div>
-
-
-        {/* Posted Properties Grid */}
-        <div className="p-4">
-            <div>
-                <PropertyFilters 
-                    properties={properties}
-                    setFilteredProperties={setFilteredProperties}
-                />
-            </div>
-            <div>
-                <h1 className="text-2xl font-bold text-gray-800">Posted Properties</h1>
-            </div>
-            <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50">
-                {loadingProperties ? (
-                    <p className="text-gray-500">Loading properties...</p>
-                ) : error ? (
-                    <p className="text-red-500">{error}</p>
-                ) : properties.length === 0 ? (
-                    <p className="text-gray-500">No properties found</p>
-                ) : (
-                    properties.map((property) => (
-                    <div key={property.id} className="border rounded-xl p-4 shadow transition bg-white">
-                        <div className="w-full h-40 rounded-lg mb-3 bg-gray-200 flex items-center justify-center overflow-hidden">
-                        {property.image_url ? (
-                            <img
-                            src={`http://localhost:5000/uploads/Images/${property.image_url}`}
-                            alt={property.apartment_name}
-                            className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <p className="text-gray-500 text-sm">No Image</p>
-                        )}
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-800">{property.apartment_name}</h3>
-                        <p className="text-sm text-gray-500">{property.property_type}</p>
-                        <p className="text-sm text-gray-600 mt-1">{property.city}, {property.area}</p>
-                        <p className="text-sm text-gray-800 mt-2 font-semibold">
-                        KES {property.monthly_rent?.toLocaleString() || 0}
-                        </p>
-                        <div className="flex items-center justify-between mt-2">
-                            <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-100 hover:scale-105" onClick={() => {setOpenViewDetails(true); setSelectedProperty(property);}}>View Details</button>
-                            <button className="px-4 py-2 rounded-lg text-sm font-bold text-gray-50 bg-green-500 hover:bg-green-600 hover:scale-105" 
-                            onClick={() => {
-                                setSelectedProperty(property);
-                                setEditFormData({
-                                    apartment_name: property.apartment_name || "",
-                                    property_type: property.property_type || "",
-                                    city: property.city || "",
-                                    area: property.area || "",
-                                    street_address: property.street_address || "",
-                                    monthly_rent: property.monthly_rent || "",
-                                    security_deposit: property.security_deposit || "",
-                                    description: property.description || "",
-                                    image_url: null,
-                                    documents: null
-                                });
-
-                                setOpenEditProperty(true);
-                            }}
-                            >Edit Property
-                            </button>
-                        </div>
-                    </div>
-                    ))
-                )}
-            </div>
-        </div>
-      </div>
 
 
         {openViewDetails && selectedProperty && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-3xl relative">
-                <div className="flex items-center justify-between border-b border-gray-200 py-2">
-                <div>
-                    <h1 className="text-xl font-bold text-blue-600">{selectedProperty.apartment_name.charAt(0).toUpperCase() + selectedProperty.apartment_name.slice(1)}</h1>
-                    <p className="text-sm text-gray-600">{selectedProperty.manager_first_name.charAt(0).toUpperCase() + selectedProperty.manager_first_name.slice(1)} {selectedProperty.manager_last_name.charAt(0).toUpperCase() + selectedProperty.manager_last_name.slice(1)}</p>
+                <div className="bg-white rounded-lg p-6 w-full max-w-3xl relative">
+                    <div className="flex items-center justify-between border-b border-gray-200 py-2">
+                        <div>
+                            <h1 className="text-xl font-bold text-blue-600">{selectedProperty.apartment_name.charAt(0).toUpperCase() + selectedProperty.apartment_name.slice(1)}</h1>
+                            <p className="text-sm text-gray-600">{selectedProperty.manager_first_name.charAt(0).toUpperCase() + selectedProperty.manager_first_name.slice(1)} {selectedProperty.manager_last_name.charAt(0).toUpperCase() + selectedProperty.manager_last_name.slice(1)}</p>
+                        </div>
+                        <div className="">
+                            <button
+                            onClick={() => setOpenViewDetails(false)}
+                            className="absolute text-gray-500 hover:text-gray-800 p-2 rounded-lg top-6 right-6 bg-gray-100 hover:bg-gray-200 transition"
+                            >
+                            ✕
+                            </button>
+                        </div>
+                    </div>
+                    <div className="w-full h-64 mt-4 rounded-lg flex items-center justify-center bg-gray-200">
+                    {selectedProperty.image_url ? (
+                        <img
+                        src={`http://localhost:5000/uploads/Images/${selectedProperty.image_url}`}
+                        alt={selectedProperty.apartment_name}
+                        className="w-full h-full object-cover rounded-lg"
+                        />
+                    ) : (
+                        <p className="text-gray-500 text-sm">No Image</p>
+                    )}
+                    </div>
+                    <div className="mt-4 flex items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-800">{selectedProperty.apartment_name.charAt(0).toUpperCase() + selectedProperty.apartment_name.slice(1)}</h2>
+                            <p className="flex py-1 items-center text-sm text-gray-700"><MapPin size={18} className="mr-2"/>{selectedProperty.city.charAt(0).toUpperCase() + selectedProperty.city.slice(1)}, {selectedProperty.area.charAt(0).toUpperCase() + selectedProperty.area.slice(1)}, {selectedProperty.street_address.charAt(0).toUpperCase() + selectedProperty.street_address.slice(1)}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-600 ">{selectedProperty.property_type.charAt(0).toUpperCase() + selectedProperty.property_type.slice(1)}</p>
+                            <p className="text-sm text-gray-600 ">{selectedProperty.total_units} Total Units</p>
+                        </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-blue-600 text-lg font-bold">KES {selectedProperty.monthly_rent?.toLocaleString()}<span className="text-gray-600 text-sm ml-1">/month</span></p>
+                            <p className="text-gray-600 text-xs">Security Deposit: KES {selectedProperty.security_deposit?.toLocaleString()}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-700">Rent Due Day: {selectedProperty.rent_due_type},{selectedProperty.rent_due_day}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-3">
+                        <div></div>
+                        <div></div>
+                    </div>
+                    <div className="mt-4 border-t border-gray-200 pt-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-600 text-sm flex items-center">Added:<Calendar size={16} className="ml-2 mr-1"/> {new Date(selectedProperty?.created_at).toLocaleString("en-GB")}</p>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                            <button
+                            onClick={handleDownload}
+                            className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
+                            >
+                            Download Ownership Document
+                            </button>
+                            <button className="px-4 py-2 rounded-lg bg-red-500 text-sm text-white font-semibold hover:bg-red-600" onClick={handleDelete}>Delete Property</button>
+                        </div>
+                    </div>
                 </div>
-                <div className="">
-                    <button
-                    onClick={() => setOpenViewDetails(false)}
-                    className="absolute text-gray-500 hover:text-gray-800 p-2 rounded-lg top-6 right-6 bg-gray-100 hover:bg-gray-200 transition"
-                    >
-                    ✕
-                    </button>
-                </div>
-                </div>
-                <div className="w-full h-64 mt-4 rounded-lg flex items-center justify-center bg-gray-200">
-                {selectedProperty.image_url ? (
-                    <img
-                    src={`http://localhost:5000/uploads/Images/${selectedProperty.image_url}`}
-                    alt={selectedProperty.apartment_name}
-                    className="w-full h-full object-cover rounded-lg"
-                    />
-                ) : (
-                    <p className="text-gray-500 text-sm">No Image</p>
-                )}
-                </div>
-                <div className="mt-4 flex items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-lg font-bold text-gray-800">{selectedProperty.apartment_name.charAt(0).toUpperCase() + selectedProperty.apartment_name.slice(1)}</h2>
-                    <p className="flex py-1 items-center text-sm text-gray-700"><MapPin size={18} className="mr-2"/>{selectedProperty.city.charAt(0).toUpperCase() + selectedProperty.city.slice(1)}, {selectedProperty.area.charAt(0).toUpperCase() + selectedProperty.area.slice(1)}, {selectedProperty.street_address.charAt(0).toUpperCase() + selectedProperty.street_address.slice(1)}</p>
-                </div>
-                <div>
-                    <p className="text-sm text-gray-600 ">{selectedProperty.property_type.charAt(0).toUpperCase() + selectedProperty.property_type.slice(1)}</p>
-                </div>
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                <div>
-                    <p className="text-blue-600 text-lg font-bold">KES {selectedProperty.monthly_rent?.toLocaleString()}<span className="text-gray-600 text-sm ml-1">/month</span></p>
-                    <p className="text-gray-600 text-xs">Security Deposit: KES {selectedProperty.security_deposit?.toLocaleString()}</p>
-                </div>
-                <div>
-                    <p className="text-sm text-gray-700">Rent Due Day: {selectedProperty.rent_due_type},{selectedProperty.rent_due_day}</p>
-                </div>
-                </div>
-                <div className="flex items-center justify-between mt-3">
-                <div></div>
-                <div></div>
-                </div>
-                <div className="mt-4 border-t border-gray-200 pt-4 flex items-center justify-between">
-                <div>
-                    <p className="text-gray-600 text-sm flex items-center">Added:<Calendar size={16} className="ml-2 mr-1"/> {new Date(selectedProperty?.created_at).toLocaleString("en-GB")}</p>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                    <button
-                    onClick={handleDownload}
-                    className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
-                    >
-                    Download Ownership Document
-                    </button>
-                    <button className="px-4 py-2 rounded-lg bg-red-500 text-sm text-white font-semibold hover:bg-red-600" onClick={handleDelete}>Delete Property</button>
-                </div>
-                </div>
-            </div>
             </div>
         )}
 
@@ -1003,6 +1112,8 @@ function LandlordProperties() {
                                                     </label>
                                                     <input
                                                         id="apartment_name"
+                                                        name="apartment_name"
+                                                        value={formData.apartment_name}
                                                         type="text"
                                                         placeholder="Enter your apartment name"
                                                         required
@@ -1018,6 +1129,8 @@ function LandlordProperties() {
                                                     </label>
                                                     <select
                                                         id="property_type"
+                                                        name="property_type"
+                                                        value={formData.property_type}
                                                         onChange={handleChange}
                                                         required
                                                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
@@ -1028,6 +1141,23 @@ function LandlordProperties() {
                                                         <option value="studio">Studio</option>
                                                         <option value="house">House</option>
                                                     </select>
+                                                </div>
+
+                                                {/* Total Units */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Total Units
+                                                    </label>
+                                                    <input
+                                                        id="total_units"
+                                                        name="total_units"
+                                                        value={formData.total_units}
+                                                        onChange={handleChange}
+                                                        required
+                                                        type="number"
+                                                        placeholder="Total Number of Units"
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    />
                                                 </div>
                                             </div>
 
@@ -1046,7 +1176,9 @@ function LandlordProperties() {
                                                             type="text"
                                                             placeholder="Enter first name"
                                                             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                                                            id="first_name"
+                                                            id="manager_first_name"
+                                                            name="manager_first_name"
+                                                            value={formData.manager_first_name}
                                                             onChange={handleChange}
                                                             required
                                                         />
@@ -1061,7 +1193,9 @@ function LandlordProperties() {
                                                             type="text"
                                                             placeholder="Enter last name"
                                                             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                                                            id="last_name"
+                                                            id="manager_last_name"
+                                                            name="manager_last_name"
+                                                            value={formData.manager_last_name}
                                                             onChange={handleChange}
                                                             required
                                                         />
@@ -1099,6 +1233,8 @@ function LandlordProperties() {
                                                         placeholder="e.g Kenya"
                                                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                                         id="country"
+                                                        name="country"
+                                                        value={formData.country}
                                                         onChange={handleChange}
                                                         required
                                                     />
@@ -1111,7 +1247,10 @@ function LandlordProperties() {
                                                     </label>
                                                     <input
                                                         id="city"
+                                                        name="city"
+                                                        value={formData.city}
                                                         onChange={handleChange}
+                                                        required
                                                         type="text"
                                                         placeholder="e.g Nairobi"
                                                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
@@ -1125,8 +1264,11 @@ function LandlordProperties() {
                                                     </label>
                                                     <input
                                                         id="area"
+                                                        name="area"
+                                                        value={formData.area}
                                                         onChange={handleChange}
                                                         type="text"
+                                                        required
                                                         placeholder="e.g Westlands"
                                                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                                     />
@@ -1139,7 +1281,10 @@ function LandlordProperties() {
                                                     </label>
                                                     <input
                                                         id="street_address"
+                                                        name="street_address"
+                                                        value={formData.street_address}
                                                         onChange={handleChange}
+                                                        required
                                                         type="text"
                                                         placeholder="e.g 45 Ngong Road"
                                                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
@@ -1153,8 +1298,11 @@ function LandlordProperties() {
                                                     </label>
                                                     <input
                                                         id="postal_code"
+                                                        name="postal_code"
+                                                        value={formData.postal_code}
                                                         onChange={handleChange}
                                                         type="text"
+                                                        required
                                                         placeholder="e.g 00100"
                                                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                                     />
@@ -1238,6 +1386,9 @@ function LandlordProperties() {
                                                         </span>
                                                         <input
                                                         id="monthly_rent"
+                                                        name="monthly_rent"
+                                                        value={formData.monthly_rent}
+                                                        required
                                                         type="number"
                                                         placeholder="0.00"
                                                         className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent focus:outline-none"
@@ -1258,6 +1409,9 @@ function LandlordProperties() {
                                                         </span>
                                                         <input
                                                         id="security_deposit"
+                                                        name="security_deposit"
+                                                        value={formData.security_deposit}
+                                                        required
                                                         type="number"
                                                         placeholder="0.00"
                                                         className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent focus:outline-none"
@@ -1297,6 +1451,7 @@ function LandlordProperties() {
                                                     <select
                                                         name="rent_due_type"
                                                         value={formData.rent_due_type}
+                                                        required
                                                         onChange={handleChange}
                                                         className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
                                                         >
@@ -1354,6 +1509,7 @@ function LandlordProperties() {
                                                     id="image_url"
                                                     accept="image/png, image/jpeg"
                                                     onChange={handleChange}
+                                                    required
                                                     type="file" 
                                                     className="hidden"
                                                 />
@@ -1405,6 +1561,7 @@ function LandlordProperties() {
                                                 <input 
                                                     id="documents"
                                                     onChange={handleChange}
+                                                    required
                                                     type="file" 
                                                     accept="application/pdf"
                                                     className="hidden"
@@ -1522,8 +1679,23 @@ function LandlordProperties() {
                                                         <option value="">Property Status</option>
                                                         <option value="Vacant">Vacant</option>
                                                         <option value="Occupied">Occupied</option>
+                                                        <option value="On Sale">On Sale</option>
                                                     </select>
                                                 </div>
+                                                {/* Vacant Units */}
+                                                {postFormData.property_status === "Vacant" && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Vacant Units</label>
+                                                    <input
+                                                        type="number"
+                                                        id="vacant_units"
+                                                        value={postFormData.vacant_units}
+                                                        onChange={handleChange}
+                                                        placeholder="Number of vacant units"
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    />
+                                                </div>
+                                                )}
                                             </div>
 
                                             {/* Divider */}
@@ -1909,7 +2081,7 @@ function LandlordProperties() {
                                                         value={postFormData.rent_due_day || ""}
                                                         onChange={handleInputChange}
                                                         required
-                                                        className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
+                                                        className="w-full py-2 px-4 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
                                                     >
                                                         <option value="" disabled>Select day</option>
                                                         {[...Array(31)].map((_, i) => (
@@ -1929,7 +2101,7 @@ function LandlordProperties() {
                                                         name="rent_due_type"
                                                         value={postFormData.rent_due_type}
                                                         onChange={handleInputChange}
-                                                        className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
+                                                        className="w-full py-2 px-4 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
                                                         >
                                                         <option value="ON">On this day</option>
                                                         <option value="ON_OR_BEFORE">On or before this day</option>

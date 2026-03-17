@@ -19,6 +19,7 @@ function Home() {
     }
   }, [location]);
   const navigate= useNavigate();
+  
   return (
     <section className="w-full pt-24 bg-cover bg-center"  style={{
         backgroundImage: `
@@ -31,7 +32,7 @@ function Home() {
       }}>
       <div className="container mx-auto p-6">
         {/* Trusted Badge */}
-        <div className="max-w-sm bg-blue-300 rounded-2xl shadow-md text-center p-2 mt-5 md:mt-10 mb-3">
+        <div className="max-w-sm bg-blue-200 rounded-3xl shadow-md text-center p-2 mt-5 md:mt-10 mb-3">
           <h2 className="text-sm md:text-base text-blue-600 font-bold">Trusted by 10,000+ Property Owners</h2>
         </div>
 

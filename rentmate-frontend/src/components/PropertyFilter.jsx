@@ -2,19 +2,18 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 
 function PropertyFilters({ properties, setFilteredProperties }) {
-
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [type, setType] = useState("");
 
   const handleFilter = (valueSearch = search, valueStatus = status, valueType = type) => {
-
     let filtered = properties;
 
     if (valueSearch) {
       filtered = filtered.filter((property) =>
-        property.title?.toLowerCase().includes(valueSearch.toLowerCase()) ||
-        property.location?.toLowerCase().includes(valueSearch.toLowerCase())
+        property.apartment_name?.toLowerCase().includes(valueSearch.toLowerCase()) ||
+        property.city?.toLowerCase().includes(valueSearch.toLowerCase()) ||
+        property.area?.toLowerCase().includes(valueSearch.toLowerCase())
       );
     }
 
@@ -31,14 +30,12 @@ function PropertyFilters({ properties, setFilteredProperties }) {
 
   return (
     <div className="bg-white shadow-sm border rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-
       {/* SEARCH */}
       <div className="relative w-full md:w-1/2">
         <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-
         <input
           type="text"
-          placeholder="Search by title or location..."
+          placeholder="Search by name, city, or area..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -50,7 +47,6 @@ function PropertyFilters({ properties, setFilteredProperties }) {
 
       {/* FILTERS */}
       <div className="flex gap-3 w-full md:w-auto">
-
         <select
           value={status}
           onChange={(e) => {
@@ -60,9 +56,9 @@ function PropertyFilters({ properties, setFilteredProperties }) {
           className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Status</option>
-          <option value="Occupied">Occupied</option>
-          <option value="Vacant">Vacant</option>
-          <option value="Pending Approval">Pending Approval</option>
+          <option value="posted">Posted</option>
+          <option value="occupied">Occupied</option>
+          <option value="vacant">Vacant</option>
         </select>
 
         <select
@@ -79,7 +75,6 @@ function PropertyFilters({ properties, setFilteredProperties }) {
           <option value="Bedsitter">Bedsitter</option>
           <option value="Studio">Studio</option>
         </select>
-
       </div>
     </div>
   );
