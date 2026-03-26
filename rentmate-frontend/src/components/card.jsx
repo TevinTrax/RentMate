@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { FaHeart, FaLocationDot, FaBed, FaBath, FaSquare, FaArrowRight } from "react-icons/fa6";
+import { useNavigate } from "react-router-dom";
 
 function Cards() {
 
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate= useNavigate();
 
   const fetchPostedProperties = async () => {
     try {
@@ -31,7 +33,7 @@ function Cards() {
   }, []);
 
   return (
-    <section className="w-full py-10 bg-gray-50">
+    <section className="w-full py-10">
 
       <div className="container mx-auto px-6">
 
@@ -66,12 +68,16 @@ function Cards() {
 
                   <p
                     className={`px-3 py-1 text-sm font-medium rounded-full backdrop-blur-sm ${
-                      property.approval_status === "approved"
+                      property.property_status === "Vacant"
                         ? "bg-green-500 text-white"
-                        : "bg-red-500 text-white"
+                        : property.property_status === "Occupied"
+                        ? "bg-red-500 text-white"
+                        : property.property_status === "On Sale"
+                        ? "bg-amber-500 text-white"
+                        : "bg-gray-500 text-white"
                     }`}
                   >
-                    {property.approval_status || "Unknown"}
+                    {property.property_status || "Unknown"}
                   </p>
 
                   <FaHeart className="text-white bg-black/40 p-2 rounded-full cursor-pointer hover:text-red-500 text-3xl" />
@@ -92,7 +98,7 @@ function Cards() {
               </div>
 
               {/* Top Section */}
-              <div className="p-4 border-b">
+              <div className="p-4">
                 <h2 className="text-lg font-bold mt-2 text-gray-800">
                   Ksh {property.monthly_rent?.toLocaleString() || "0"}
                   <span className="text-gray-500 text-sm"> /month</span>
@@ -131,11 +137,14 @@ function Cards() {
                 {/* Buttons */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-4">
 
-                  <button className="border border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-500 hover:text-white transition">
+                  <button
+                    className="border border-blue-600 text-blue-600 px-4 py-1 rounded-lg hover:bg-blue-500 hover:text-white transition"
+                    onClick={() => navigate("/property-details", { state: { property } })}
+                  >
                     View Details
                   </button>
 
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                  <button className="bg-green-600 text-white px-4 py-1 rounded-lg hover:bg-green-700 transition">
                     Contact
                   </button>
 
@@ -151,13 +160,9 @@ function Cards() {
 
         {/* View All Button */}
         <div className="text-center mt-10">
-
-          <button className="flex items-center mx-auto gap-2 bg-gradient-to-r from-blue-600 to-purple-600 font-medium text-white px-6 py-3 rounded-lg hover:opacity-90 transition">
-
+          <button className="flex items-center mx-auto gap-2 bg-green-600 text-md font-bold text-white px-6 py-3 rounded-lg hover:opacity-90 transition">
             View All Properties <FaArrowRight />
-
           </button>
-
         </div>
 
       </div>

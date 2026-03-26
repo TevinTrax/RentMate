@@ -53,7 +53,7 @@ function Aboutus() {
   ];
 
   return (
-    <section className="w-full pt-24 space-y-20">
+    <section className="w-full pt-24 space-y-20 bg-green-50">
       {/* HERO SECTION */}
       <div className="container mx-auto text-center">
         <h2 className="w-fit text-sm md:text-md text-blue-500 bg-blue-50 font-bold mb-4 mx-auto rounded-2xl px-3 py-1">
@@ -112,7 +112,7 @@ function Aboutus() {
             return (
               <div
                 key={index}
-                className="border border-gray-200 rounded-xl p-6 bg-white shadow-md hover:shadow-lg transition-shadow"
+                className="border border-gray-200 rounded-xl p-6 bg-green-100 shadow-md hover:shadow-lg transition-shadow"
               >
                 <div className="h-10 w-10 md:h-12 md:w-12 mb-4 flex items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <Icon size={20} />

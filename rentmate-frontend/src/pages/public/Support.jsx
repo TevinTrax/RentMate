@@ -29,7 +29,7 @@ function Support() {
   return (
     <section className="w-full">
       {/* HERO */}
-      <div className="bg-gradient-to-br from-blue-700 to-purple-700 text-white">
+      <div className="bg-gradient-to-br from-green-700 to-green-400 text-white">
         <div className="container mx-auto text-center py-32 px-4 space-y-6">
           <h1 className="text-4xl md:text-5xl font-bold">How can we help you?</h1>
           <p className="max-w-2xl mx-auto text-lg md:text-xl">
@@ -44,7 +44,7 @@ function Support() {
               placeholder="Search FAQs, guides, and help articles"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full pl-12 pr-4 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-600"
             />
           </div>
         </div>
@@ -53,7 +53,7 @@ function Support() {
       <div><FAQS search={search} /></div>
 
       {/* CONTACT SUPPORT */}
-      <div className="bg-gray-100 py-20">
+      <div className="bg-green-50 py-20">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 text-center">
             Contact Support
@@ -137,11 +137,11 @@ function Support() {
       </div>
 
       {/* Technical Support Section */}
-      <div className="bg-gray-50">
+      <div className="bg-green-100">
         <h1 className="text-3xl md:text-4xl text-gray-800 text-center font-bold pt-10">Technical Support</h1>
         <p className="text-md text-gray-700 text-center pt-4">Quick solutions for technical issues and platform requirements</p>
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
-          <div className="p-6 rounded-lg bg-white shadow-md">
+          <div className="p-6 rounded-lg bg-green-50 shadow-md">
             <div className="flex mb-3">
               <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-yellow-100"><FaSyncAlt size={20} className="text-yellow-500"/></div>
               <h2 className="ml-2 text-md md:text-xl font-bold text-gray-800">Troubleshooting Common Issues</h2>
@@ -154,7 +154,7 @@ function Support() {
               <li>Update your browser to the latest version.</li>
             </ul>
           </div>
-          <div className="p-6 rounded-lg bg-white shadow-md">
+          <div className="p-6 rounded-lg bg-green-50 shadow-md">
             <div className="flex mb-3">
               <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-yellow-100"><FaDesktop size={20} className="text-yellow-500"/></div>
               <h2 className="ml-2 text-md md:text-xl font-bold text-gray-800">Browser Compatibility</h2>
@@ -166,7 +166,7 @@ function Support() {
               <li>Edge (recommended) - version 90+</li>
             </ul>
           </div>
-          <div className="p-6 rounded-lg bg-white shadow-md">
+          <div className="p-6 rounded-lg bg-green-50 shadow-md">
             <div className="flex mb-3">
               <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-yellow-100"><FaMobileAlt size={20} className="text-yellow-500"/></div>
               <h2 className="ml-2 text-md md:text-xl font-bold text-gray-800">Mobile vs Desktop</h2>
@@ -177,7 +177,7 @@ function Support() {
               <li>Some admin features desktop-only.</li>
             </ul>
           </div>
-          <div className="p-6 rounded-lg bg-white shadow-md">
+          <div className="p-6 rounded-lg bg-green-50 shadow-md">
             <div className="flex mb-3">
               <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-yellow-100"><FaExclamationTriangle size={20} className="text-yellow-500"/></div>
               <h2 className="ml-2 text-md md:text-xl font-bold text-gray-800">Reporting Issues</h2>
@@ -254,7 +254,7 @@ function Support() {
       </div>
 
       {/* Feedback Section */}
-    <div className="bg-blue-50 py-24">
+    <div className="bg-green-50 py-24">
       <form className="max-w-3xl mx-auto bg-white p-10 rounded-2xl shadow-xl flex flex-col gap-4">
         <div className="h-16 w-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
           <FaLightbulb size={24} className="text-yellow-500" />
@@ -277,12 +277,12 @@ function Support() {
           name="feedback"
           rows={7}
           placeholder="Share your ideas, suggestions, or feedback..."
-          className="w-full h-36 text-md border border-gray-300 rounded-xl p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          className="w-full h-36 text-md border border-gray-300 rounded-xl p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
         />
 
         <button
           type="submit"
-          className="mt-4 py-3 rounded-xl text-white font-bold bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90 transition"
+          className="mt-4 py-3 rounded-xl text-white font-bold bg-gradient-to-r from-green-600 to-green-400 hover:opacity-90 transition"
         >
           <FaCommentDots size={20} className="mr-3 inline"/>Submit Feedback
         </button>
@@ -290,8 +290,8 @@ function Support() {
     </div>
 
     {/* Contact Section */}
-    <div className="text-center text-white bg-gradient-to-br from-blue-600 to-purple-600 py-20 px-4">
-      <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center bg-blue-400">
+    <div className="text-center text-white bg-gradient-to-br from-green-600 to-green-400 py-20 px-4">
+      <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center bg-green-400">
         <FaHeadphonesAlt size={36} />
       </div>
 
@@ -304,7 +304,7 @@ function Support() {
 
       <a
         href="tel:+254790636213"
-        className="inline-block text-md mt-6 px-10 py-3 rounded-xl bg-white text-blue-600 font-bold hover:bg-gray-100 transition"
+        className="inline-block text-md mt-6 px-10 py-3 rounded-xl bg-white text-green-600 font-bold hover:bg-gray-100 transition"
       >
         Contact Support<FaArrowRight size={14} className="ml-4 inline" />
       </a>

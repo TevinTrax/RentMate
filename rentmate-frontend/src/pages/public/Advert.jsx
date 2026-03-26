@@ -4,7 +4,7 @@ function Advert() {
     const navigate = useNavigate();
 
     return(
-        <section className="w-full bg-gradient-to-br from-blue-600 to-purple-600">
+        <section className="w-full bg-gradient-to-br from-green-600 to-green-500">
             <div className="container mx-auto p-6">
                 <h1 className="max-w-xl mx-auto text-3xl md:text-4xl text-center font-bold text-white pt-12">Ready to Simplify Your Property Management?</h1>
                 <p className="max-w-2xl mx-auto text-center text-white text-md md:text-lg pt-4">Join thousands of property managers who have already transformed their rental business. Start your free trial today, no credit card required.</p>

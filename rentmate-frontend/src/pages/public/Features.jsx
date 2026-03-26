@@ -62,12 +62,12 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="w-full">
+    <section id="features" className="w-full bg-green-50">
       <div className="container mx-auto p-6">
-        <h1 className="max-w-2xl mx-auto pt-10 text-center text-gray-800 text-4xl md:leading-tightpy-4 font-bold">
+        <h1 className="max-w-2xl mx-auto pt-10 text-center text-gray-800 text-4xl md:leading-tight py-3 font-bold">
           Everything You Need to{" "}
           <br />
-          <span className="text-blue-500">Manage Properties</span>
+          <span className="text-green-600">Manage Properties</span>
         </h1>
 
         <p className="max-w-4xl mx-auto text-center text-md md:text-xl text-gray-700 md:leading-relaxed mt-4">

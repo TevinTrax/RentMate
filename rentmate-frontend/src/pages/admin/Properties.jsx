@@ -37,8 +37,9 @@ function AdminProperties() {
   const [formData, setFormData] = useState({
     apartment_name: "",
     property_type: "",
-    first_name: "",
-    last_name: "",
+    total_units:"",
+    manager_first_name: "",
+    manager_last_name: "",
     country: "",
     city: "",
     area: "",
@@ -83,6 +84,7 @@ function AdminProperties() {
         setFormData({
           apartment_name: "",
           property_type: "",
+          total_units:"",
           first_name: "",
           last_name: "",
           country: "",
@@ -218,33 +220,65 @@ function AdminProperties() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this property?")) {
-      return;
-    }
-    try {
-      const token = sessionStorage.getItem("token"); // assuming JWT stored here
-      const response = await fetch(`http://localhost:5000/api/properties/${selectedProperty.id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
+    const handleDelete = async () => {
+        if (!selectedProperty?.id) {
+            alert("No property selected.");
+            return;
         }
-      });
 
-      const data = await response.json();
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this property?"
+        );
+        if (!confirmed) return;
 
-      if (response.ok) {
-        alert("Property deleted successfully!");
-        // Optionally refresh the properties list
-        fetchProperties();
-      } else {
-        alert(data.error || "Failed to delete property.");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("An error occurred while deleting the property.");
-    }
-  };
+        const propertyId = selectedProperty.id;
+
+        // CLOSE MODALS IMMEDIATELY
+        setOpenViewDetails(false);
+        setOpenEditProperty(false);
+        setSelectedProperty(null);
+
+        try {
+            const token = sessionStorage.getItem("token");
+
+            const response = await fetch(
+            `http://localhost:5000/api/properties/${propertyId}`,
+            {
+                method: "DELETE",
+                headers: {
+                Authorization: `Bearer ${token}`,
+                },
+            }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+            throw new Error(data.error || "Failed to delete property");
+            }
+
+            // REMOVE PROPERTY FROM ALL LISTS IMMEDIATELY
+            setProperties((prev) =>
+            prev.filter((property) => property.id !== propertyId)
+            );
+            setFilteredProperties((prev) =>
+            prev.filter((property) => property.id !== propertyId)
+            );
+            setPostedProperties((prev) =>
+            prev.filter((property) => property.id !== propertyId)
+            );
+            setFilteredPosted((prev) =>
+            prev.filter((property) => property.id !== propertyId)
+            );
+
+            alert("Property deleted successfully!");
+
+        } catch (error) {
+            console.error("Delete property error:", error);
+            alert(error.message || "An error occurred while deleting the property.");
+        }
+    };
+
 
   // Edit property form state
 const [editFormData, setEditFormData] = useState({
@@ -344,6 +378,7 @@ const handleEditChange = (e) => {
         apartment_name: "",
         property_type: "",
         property_status: "",
+        vacant_units:"",
         description: "",
         manager_first_name: "",
         manager_last_name: "",
@@ -448,6 +483,7 @@ const handleEditChange = (e) => {
                 apartment_name: "",
                 property_type: "",
                 property_status: "",
+                vacant_units:"",
                 description: "",
                 manager_first_name: "",
                 manager_last_name: "",
@@ -579,112 +615,112 @@ const handleEditChange = (e) => {
         {/* Search */}
         <div className="mt-10">
           {/* Properties Grid */}
-          <div className="">
-            <div>
-              <PropertyFilters 
-              properties={postedProperties}
-              setFilteredProperties={setFilteredPosted}
-              />
-            </div>
-            <div className="my-2">
-              <h1 className="text-xl text-gray-800 font-bold">All Properties</h1>
-            </div>
-            <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50">
+            <div className="">
+                <div>
+                    <PropertyFilters 
+                    properties={postedProperties}
+                    setFilteredProperties={setFilteredPosted}
+                    />
+                </div>
+                <div className="my-2">
+                    <h1 className="text-xl text-gray-800 font-bold">All Properties</h1>
+                </div>
+                <div className="border border-gray-300 rounded-lg mt-4 p-4 bg-gray-50 h-[90vh] overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">                        
+                        {loadingProperties ? (
+                            <p className="text-gray-500">Loading properties...</p>
 
-              {loadingProperties ? (
-                <p className="text-gray-500">Loading properties...</p>
+                        ) : error ? (
+                            <p className="text-red-500">{error}</p>
 
-              ) : error ? (
-                <p className="text-red-500">{error}</p>
+                        ) : properties.length === 0 ? (
+                            <p className="text-gray-500">No properties found</p>
 
-              ) : properties.length === 0 ? (
-                <p className="text-gray-500">No properties found</p>
-
-              ) : (
-                properties.map((property) => (
-
-                  <div
-                    key={property.id}
-                    className="border rounded-xl p-4 shadow transition bg-white"
-                  >
-
-                    <div className="w-full h-40 rounded-lg mb-3 bg-gray-200 overflow-hidden relative">
-                        {/* Status Badge */}
-                        <span
-                            className={`absolute top-2 left-2 px-3 py-1 text-xs font-semibold rounded-full shadow capitalize
-                            ${
-                                property.status === "draft"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : property.status === "posted"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-700"
-                            }
-                            `}
-                        >
-                            {property.status}
-                        </span>
-
-                        {property.image_url ? (
-                            <img
-                            src={`http://localhost:5000/uploads/Images/${property.image_url}`}
-                            alt={property.apartment_name}
-                            className="w-full h-full object-cover"
-                            />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                            <p className="text-gray-500 text-sm">No Image</p>
+                            properties.map((property) => (
+
+                            <div
+                                key={property.id}
+                                className="border rounded-xl p-4 shadow transition bg-white"
+                            >
+
+                                <div className="w-full h-40 rounded-lg mb-3 bg-gray-200 overflow-hidden relative">
+                                    {/* Status Badge */}
+                                    <span
+                                        className={`absolute top-2 left-2 px-3 py-1 text-xs font-semibold rounded-full shadow capitalize
+                                        ${
+                                            property.status === "draft"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : property.status === "posted"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-gray-100 text-gray-700"
+                                        }
+                                        `}
+                                    >
+                                        {property.status}
+                                    </span>
+
+                                    {property.image_url ? (
+                                        <img
+                                        src={`http://localhost:5000/uploads/Images/${property.image_url}`}
+                                        alt={property.apartment_name}
+                                        className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                        <p className="text-gray-500 text-sm">No Image</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <h3 className="text-lg font-semibold text-gray-800">
+                                {property.apartment_name.charAt(0).toUpperCase() + property.apartment_name.slice(1)}
+                                </h3>
+
+                                <p className="text-sm text-gray-500">
+                                {property.property_type.charAt(0).toUpperCase() + property.property_type.slice(1)}
+                                </p>
+
+                                <p className="text-sm text-gray-600 mt-1">
+                                {property.city.charAt(0).toUpperCase() + property.city.slice(1)}, {property.area.charAt(0).toUpperCase() + property.area.slice(1)}
+                                </p>
+
+                                <p className="text-sm text-gray-800 mt-2 font-semibold">
+                                KES {property.monthly_rent?.toLocaleString()}
+                                </p>
+                                <div className="flex items-center justify-between mt-2">
+                                <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-100 hover:scale-105" onClick={()=>{setOpenViewDetails(true); setSelectedProperty(property);}}>View Details</button> 
+                                <button
+                                    className="px-4 py-2 rounded-lg text-sm font-bold text-gray-50 bg-green-500 hover:bg-green-600 hover:scale-105"
+                                    onClick={() => {
+                                    setSelectedProperty(property);
+
+                                    setEditFormData({
+                                        apartment_name: property.apartment_name || "",
+                                        property_type: property.property_type || "",
+                                        city: property.city || "",
+                                        area: property.area || "",
+                                        street_address: property.street_address || "",
+                                        monthly_rent: property.monthly_rent || "",
+                                        security_deposit: property.security_deposit || "",
+                                        description: property.description || "",
+                                        image_url: null,
+                                        documents: null
+                                    });
+
+                                    setOpenEditProperty(true);
+                                    }}
+                                >
+                                    Edit
+                                </button>
+                                </div>
+
                             </div>
+                            ))
                         )}
                     </div>
-
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {property.apartment_name.charAt(0).toUpperCase() + property.apartment_name.slice(1)}
-                    </h3>
-
-                    <p className="text-sm text-gray-500">
-                      {property.property_type.charAt(0).toUpperCase() + property.property_type.slice(1)}
-                    </p>
-
-                    <p className="text-sm text-gray-600 mt-1">
-                      {property.city.charAt(0).toUpperCase() + property.city.slice(1)}, {property.area.charAt(0).toUpperCase() + property.area.slice(1)}
-                    </p>
-
-                    <p className="text-sm text-gray-800 mt-2 font-semibold">
-                      KES {property.monthly_rent?.toLocaleString()}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 hover:bg-gray-100 hover:scale-105" onClick={()=>{setOpenViewDetails(true); setSelectedProperty(property);}}>View Details</button> 
-                      <button
-                        className="px-4 py-2 rounded-lg text-sm font-bold text-gray-50 bg-green-500 hover:bg-green-600 hover:scale-105"
-                        onClick={() => {
-                          setSelectedProperty(property);
-
-                          setEditFormData({
-                            apartment_name: property.apartment_name || "",
-                            property_type: property.property_type || "",
-                            city: property.city || "",
-                            area: property.area || "",
-                            street_address: property.street_address || "",
-                            monthly_rent: property.monthly_rent || "",
-                            security_deposit: property.security_deposit || "",
-                            description: property.description || "",
-                            image_url: null,
-                            documents: null
-                          });
-
-                          setOpenEditProperty(true);
-                        }}
-                      >
-                        Edit
-                      </button>
-                    </div>
-
-                  </div>
-                ))
-              )}
-
+                </div>
             </div>
-          </div>
 
 
             <div className="mt-7 container mx-auto">
@@ -992,42 +1028,62 @@ const handleEditChange = (e) => {
                                           </div>
                                       </div>
 
-                                      {/* Property Info Grid */}
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                          {/* Apartment Name */}
-                                          <div>
-                                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                  Apartment Name
-                                              </label>
-                                              <input
-                                                  id="apartment_name"
-                                                  type="text"
-                                                  placeholder="Enter your apartment name"
-                                                  required
-                                                  onChange={handleChange}
-                                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                                              />
-                                          </div>
+                                        {/* Property Info Grid */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Apartment Name */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Apartment Name
+                                                </label>
+                                                <input
+                                                    id="apartment_name"
+                                                    name="apartment_name"
+                                                    value={formData.apartment_name}
+                                                    type="text"
+                                                    placeholder="Enter your apartment name"
+                                                    required
+                                                    onChange={handleChange}
+                                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                />
+                                            </div>
 
-                                          {/* Property Type */}
-                                          <div>
-                                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                  Property Type
-                                              </label>
-                                              <select
-                                                  id="property_type"
-                                                  onChange={handleChange}
-                                                  required
-                                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                                              >
-                                                  <option value="">Select property type</option>
-                                                  <option value="apartment">Apartment</option>
-                                                  <option value="bedsitter">Bedsitter</option>
-                                                  <option value="studio">Studio</option>
-                                                  <option value="house">House</option>
-                                              </select>
-                                          </div>
-                                      </div>
+                                            {/* Property Type */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Property Type
+                                                </label>
+                                                <select
+                                                    id="property_type"
+                                                    name="property_type"
+                                                    value={formData.property_type}
+                                                    onChange={handleChange}
+                                                    required
+                                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                >
+                                                    <option value="">Select property type</option>
+                                                    <option value="apartment">Apartment</option>
+                                                    <option value="bedsitter">Bedsitter</option>
+                                                    <option value="studio">Studio</option>
+                                                    <option value="house">House</option>
+                                                </select>
+                                            </div>
+                                            {/* Total Units */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Total Units
+                                                </label>
+                                                <input
+                                                    id="total_units"
+                                                    name="total_units"
+                                                    value={formData.total_units}
+                                                    onChange={handleChange}
+                                                    required
+                                                    type="number"
+                                                    placeholder="Total Number of Units"
+                                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                />
+                                            </div>
+                                        </div>
 
                                       {/* Divider */}
                                       <div className="border-t border-gray-100 pt-6">
@@ -1044,7 +1100,8 @@ const handleEditChange = (e) => {
                                                       type="text"
                                                       placeholder="Enter first name"
                                                       className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                                                      id="first_name"
+                                                      id="manager_first_name"
+                                                      name="manager_first_name"
                                                       onChange={handleChange}
                                                       required
                                                   />
@@ -1059,7 +1116,8 @@ const handleEditChange = (e) => {
                                                       type="text"
                                                       placeholder="Enter last name"
                                                       className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                                                      id="last_name"
+                                                      id="manager_last_name"
+                                                      name="manager_last_name"
                                                       onChange={handleChange}
                                                       required
                                                   />
@@ -1277,7 +1335,7 @@ const handleEditChange = (e) => {
                                                   value={formData.rent_due_day || ""}
                                                   onChange={handleChange}
                                                   required
-                                                  className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
+                                                  className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
                                               >
                                                   <option value="" disabled>Select day</option>
                                                   {[...Array(31)].map((_, i) => (
@@ -1296,7 +1354,7 @@ const handleEditChange = (e) => {
                                                   name="rent_due_type"
                                                   value={formData.rent_due_type}
                                                   onChange={handleChange}
-                                                  className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
+                                                  className="w-full py-2 pr-3 text-sm text-gray-700 bg-transparent border border-gray-300 rounded-xl focus:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
                                                   >
                                                   <option value="ON">On this day</option>
                                                   <option value="ON_OR_BEFORE">On or before this day</option>
@@ -1520,8 +1578,23 @@ const handleEditChange = (e) => {
                                                         <option value="">Property Status</option>
                                                         <option value="Vacant">Vacant</option>
                                                         <option value="Occupied">Occupied</option>
+                                                        <option value="On Sale">On Sale</option>
                                                     </select>
                                                 </div>
+                                                {/* Vacant Units */}
+                                                {postFormData.property_status === "Vacant" && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Vacant Units</label>
+                                                    <input
+                                                        type="number"
+                                                        id="vacant_units"
+                                                        value={postFormData.vacant_units}
+                                                        onChange={handleChange}
+                                                        placeholder="Number of vacant units"
+                                                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                                    />
+                                                </div>
+                                                )}
                                             </div>
 
                                             {/* Divider */}

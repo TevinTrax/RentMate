@@ -22,6 +22,7 @@ import Support from "./pages/public/Support.jsx";
 import Faqs from "./pages/public/Faqs.jsx";
 import Checkout from "./pages/public/Checkout.jsx";
 import FreeTrial from "./pages/authentication/FreeTrial.jsx";
+import PostedViewDetails from "./components/ViewDetails.jsx";
 
 /* =======================
    AUTHENTICATION PAGES
@@ -81,27 +82,28 @@ function App() {
           <Routes>
             {/* ========= PUBLIC ROUTES ========= */}
             <Route path="/" element={<PublicLayout />}>
-              <Route path="/" element={<Landing />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/testimonials" element={<Testimonials />} />
-              <Route path="/advert" element={<Advert />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/faqs" element={<Faqs />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/free-trial" element={<FreeTrial />} />
+              <Route index element={<Landing />} />
+              <Route path="home" element={<Home />} />
+              <Route path="about" element={<AboutUs />} />
+              <Route path="features" element={<Features />} />
+              <Route path="pricing" element={<Pricing />} />
+              <Route path="properties" element={<Properties />} />
+              <Route path="contact" element={<Contact />} />
+              <Route path="testimonials" element={<Testimonials />} />
+              <Route path="advert" element={<Advert />} />
+              <Route path="support" element={<Support />} />
+              <Route path="faqs" element={<Faqs />} />
+              <Route path="checkout" element={<Checkout />} />
+              <Route path="free-trial" element={<FreeTrial />} />
+              <Route path="property-details" element={<PostedViewDetails/>}/>
 
               {/* ========= AUTH ROUTES ========= */}
-              <Route path="/sign-in" element={<SignIn />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/get-started" element={<GetStarted />} />
-              <Route path="/register/:role" element={<AdminRegistration />} />
-              <Route path="/register/landlord" element={<LandlordRegistration />} />
-              <Route path="/register/tenant" element={<TenantRegistration />} />
+              <Route path="sign-in" element={<SignIn />} />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="get-started" element={<GetStarted />} />
+              <Route path="register/:role" element={<AdminRegistration />} />
+              <Route path="register/landlord" element={<LandlordRegistration />} />
+              <Route path="register/tenant" element={<TenantRegistration />} />
             </Route>
 
             {/* ========= ADMIN ROUTES ========= */}

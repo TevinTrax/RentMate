@@ -1,6 +1,6 @@
 import express from "express";
 import upload from "../middlewares/upload.js";
-import { addProperty, getMyProperties, getPropertyById, getAllProperties, downloadOwnershipDocument, deleteProperty, updateProperty, postProperty, getMyPostedProperties, getPostedPropertiesPublic,  getPendingProperties, approveProperty, rejectProperty} from "../controllers/properties.controller.js";
+import { addProperty, getMyProperties, getPropertyById, getAllProperties, downloadOwnershipDocument, deleteProperty, updateProperty, postProperty, getMyPostedProperties, getPostedPropertiesPublic,  getPendingProperties, approveProperty, rejectProperty, getAvailableProperties, getPropertyUnits} from "../controllers/properties.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js"; // JWT verification middleware
 import { requireRole } from "../middlewares/auth.middleware.js";
 
@@ -10,6 +10,9 @@ router.get("/postedproperties", getPostedPropertiesPublic); // PUBLIC
 router.get("/myproperties", verifyToken, getMyProperties);
 router.get("/mypostedproperties", verifyToken, getMyPostedProperties);
 router.get("/allproperties", verifyToken, requireRole("admin"), getAllProperties);
+router.get("/available", getAvailableProperties);
+// Fetch units for a given property
+router.get("/:propertyId/units", getPropertyUnits);
 // Only admins can fetch pending properties
 router.get("/pending", verifyToken, requireRole("admin"), getPendingProperties);
 
@@ -31,11 +34,21 @@ router.post("/post-property",
   postProperty
 );
 
-// Approve property
-router.put("/approve-property/:id", verifyToken, approveProperty);
+// ✅ Admin approve property
+router.patch(
+  "/:id/approve",
+  verifyToken,
+  requireRole("admin"),
+  approveProperty
+);
 
-// Reject property
-router.put("/reject-property/:id", verifyToken, rejectProperty);
+// Admin reject property
+router.patch(
+  "/:id/reject",
+  verifyToken,
+  requireRole("admin"),
+  rejectProperty
+);
 
 // Dynamic routes at the bottom
 router.get("/:id/download", verifyToken, downloadOwnershipDocument);

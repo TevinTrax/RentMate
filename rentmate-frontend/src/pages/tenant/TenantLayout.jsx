@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { Home, CreditCard, FileText, Wrench, Bell, MessageSquare, LifeBuoy } from "lucide-react";
 import { Outlet } from "react-router-dom";
 import TenantNavbar from "./TenantNavbar";
+import { useNavigate } from "react-router-dom";
 
 function TenantLayout() {
     const NavLinkClass = ({ isActive }) =>
@@ -12,6 +13,8 @@ function TenantLayout() {
        ? "bg-violet-700 text-gray-100 shadow-sm"
        : "text-gray-300 hover:bg-gray-700 hover:text-gray-200"
    }`;
+
+   const navigate = useNavigate();
 
     const handleLogout = () => {
         sessionStorage.removeItem("token");

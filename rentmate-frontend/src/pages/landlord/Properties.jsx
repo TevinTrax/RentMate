@@ -300,30 +300,65 @@ function LandlordProperties() {
     };
 
     const handleDelete = async () => {
-        if (!window.confirm("Are you sure you want to delete this property?")) {
-        return;
+        if (!selectedProperty?.id) {
+            alert("No property selected.");
+            return;
         }
+
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this property?"
+        );
+        if (!confirmed) return;
+
+        const propertyId = selectedProperty.id;
+
+        // CLOSE MODALS IMMEDIATELY
+        setOpenViewDetails(false);
+        setOpenEditProperty(false);
+        setSelectedProperty(null);
+
         try {
-        const token = sessionStorage.getItem("token"); // assuming JWT stored here
-        const response = await fetch(`http://localhost:5000/api/properties/${selectedProperty.id}`, {
-            method: "DELETE",
-            headers: {
-            "Authorization": `Bearer ${token}`
+            const token = sessionStorage.getItem("token");
+
+            const response = await fetch(
+            `http://localhost:5000/api/properties/${propertyId}`,
+            {
+                method: "DELETE",
+                headers: {
+                Authorization: `Bearer ${token}`,
+                },
             }
-        });
+            );
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (response.ok) {
+            if (!response.ok) {
+            throw new Error(data.error || "Failed to delete property");
+            }
+
+            // REMOVE PROPERTY FROM ALL LISTS IMMEDIATELY
+            setProperties((prev) =>
+            prev.filter((property) => property.id !== propertyId)
+            );
+            setFilteredProperties((prev) =>
+            prev.filter((property) => property.id !== propertyId)
+            );
+            setPostedProperties((prev) =>
+            prev.filter((property) => property.id !== propertyId)
+            );
+            setFilteredPosted((prev) =>
+            prev.filter((property) => property.id !== propertyId)
+            );
+
             alert("Property deleted successfully!");
-            // Optionally refresh the properties list
-            fetchProperties();
-        } else {
-            alert(data.error || "Failed to delete property.");
-        }
+
+            // OPTIONAL: refresh backend data
+            await fetchProperties();
+            await fetchPostedProperties();
+
         } catch (error) {
-        console.error(error);
-        alert("An error occurred while deleting the property.");
+            console.error("Delete property error:", error);
+            alert(error.message || "An error occurred while deleting the property.");
         }
     };
 
@@ -612,7 +647,7 @@ function LandlordProperties() {
                     <h1 className="text-2xl font-bold text-gray-800">My Properties</h1>
                 </div>
 
-                <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50">
+                <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 overflow-y-auto">
 
                     {loadingProperties ? (
                         <p className="text-gray-500">Loading properties...</p>
@@ -726,7 +761,7 @@ function LandlordProperties() {
                     <h1 className="text-2xl font-bold text-gray-800">Posted Properties</h1>
                 </div>
 
-                <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50">
+                <div className="border border-gray-300 rounded-lg mt-4 p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 overflow-y-auto">
                     {loadingPosted ? (
                         <p className="text-gray-500">Loading properties...</p>
                         ) : errorPosted ? (

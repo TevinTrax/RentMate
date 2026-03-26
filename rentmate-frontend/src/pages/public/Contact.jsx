@@ -2,7 +2,7 @@ import { FaPaperPlane, FaEnvelope, FaPhone, FaMapMarkerAlt } from "react-icons/f
 
 function Contact() {
   return (
-    <section id="contact" className="w-full py-5 bg-gray-50">
+    <section id="contact" className="w-full py-5 bg-green-50">
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">
           Contact Us
@@ -21,7 +21,7 @@ function Contact() {
                   <input
                     type="text"
                     placeholder="Enter your first name"
-                    className="w-full text-md rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-sm rounded-2xl px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
                 </div>
@@ -30,7 +30,7 @@ function Contact() {
                   <input
                     type="text"
                     placeholder="Enter your last name"
-                    className="w-full text-md rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-sm rounded-2xl px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
                 </div>
@@ -41,7 +41,7 @@ function Contact() {
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="w-full text-md rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-sm rounded-2xl px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 />
               </div>
@@ -51,7 +51,7 @@ function Contact() {
                 <input
                   type="text"
                   placeholder="How can we help you?"
-                  className="w-full text-md rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-sm rounded-2xl px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 />
               </div>
@@ -61,14 +61,14 @@ function Contact() {
                 <textarea
                   placeholder="Tell us more about your inquiry..."
                   rows={5}
-                  className="w-full text-md rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full text-sm rounded-2xl p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
                   required
                 ></textarea>
               </div>
 
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-gradient-to-br from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-md font-bold"
               >
                 <FaPaperPlane size={16} />
                 Send Message
@@ -77,7 +77,7 @@ function Contact() {
           </div>
 
           {/* Right: Contact Info */}
-          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-md text-white p-10 flex flex-col space-y-4 justify-center">
+          <div className="bg-gradient-to-br from-green-600 to-green-500   rounded-2xl shadow-md text-white p-10 flex flex-col space-y-4 justify-center">
             <h2 className="text-xl md:text-2xl font-semibold">Get In Touch</h2>
 
             <div className="flex items-start gap-4">

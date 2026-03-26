@@ -54,6 +54,79 @@ function LandlordDashboard() {
         return () => clearInterval(interval);
     }, []);
 
+
+    // fetch landlord tenants
+    const [tenantStats, setTenantStats] = useState({
+        count: 0,
+        approvedCount: 0,
+        pendingCount: 0,
+        rejectedCount: 0,
+    });
+
+    const [loading, setLoading] = useState(true);
+
+    const fetchLandlordTenants = async () => {
+        try {
+            setLoading(true);
+
+            const token =
+            sessionStorage.getItem("token") || localStorage.getItem("token");
+
+            if (!token) {
+            console.error("No token found");
+            setTenantStats({
+                count: 0,
+                approvedCount: 0,
+                pendingCount: 0,
+                rejectedCount: 0,
+            });
+            return;
+            }
+
+            const res = await fetch("http://localhost:5000/api/users/landlord/landlord-tenants", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            });
+
+            const data = await res.json();
+            console.log("Landlord Tenants Response:", data);
+
+            if (res.ok && data.success) {
+            setTenantStats({
+                count: Number(data.count) || 0,
+                approvedCount: Number(data.approvedCount) || 0,
+                pendingCount: Number(data.pendingCount) || 0,
+                rejectedCount: Number(data.rejectedCount) || 0,
+            });
+            } else {
+            console.error("Failed to fetch tenants:", data.error || data.message);
+            setTenantStats({
+                count: 0,
+                approvedCount: 0,
+                pendingCount: 0,
+                rejectedCount: 0,
+            });
+            }
+        } catch (error) {
+            console.error("Error fetching landlord tenants:", error);
+            setTenantStats({
+            count: 0,
+            approvedCount: 0,
+            pendingCount: 0,
+            rejectedCount: 0,
+            });
+        } finally {
+            setLoading(false);
+        }
+        };
+
+        useEffect(() => {
+        fetchLandlordTenants();
+    }, []);
+
     return(
         <section className="w-full bg-gray-50">
             <div className="pt-20">
@@ -76,20 +149,32 @@ function LandlordDashboard() {
                     <div className="hover:scale-105 transition-transform duration-200 flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-md">
                         <div className="flex-1">
                             <p className="text-gray-700 font-semibold">Total Tenants</p>
+
                             <h2 className="text-xl font-bold text-gray-800 py-1">
-                                <CountUp end={2412} duration={2} separator="," />
+                            {loading ? (
+                                "..."
+                            ) : (
+                                <CountUp end={tenantStats.count} duration={2} separator="," />
+                            )}
                             </h2>
-                            <p className="text-sm text-gray-600">
-                                <span className="text-green-500 inline-flex items-center">
-                                <TrendingUp size={16} className="mr-1" /> +12.5%
-                                </span>{" "}
-                                vs last month
-                            </p>
+
+                            <div>
+                                <p className="text-sm text-gray-600">
+                                    <span className="text-green-500 inline-flex items-center">
+                                        <TrendingUp size={16} className="mr-1" />
+                                        {tenantStats.approvedCount} Approved
+                                    </span>                                    
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">{tenantStats.pendingCount} Pending</p>
+                            </div>
                         </div>
+
                         <div className="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
                             <Users size={28} className="text-green-600" />
                         </div>
-                    </div>
+                    </div> 
 
                     {/* Total Properties */}
                     <div className="hover:scale-105 transition-transform duration-200 flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-md">

@@ -83,3 +83,20 @@ export const approveLandlord = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const approveTenant = async (req, res) => {
+  try {
+    const { tenant_id, status } = req.body; // status = 'approved' or 'rejected'
+
+    await pool.query(
+      `UPDATE users SET approval_status=$1 WHERE id=$2 AND role='tenant'`,
+      [status, tenant_id]
+    );
+
+    res.status(200).json({ message: `Tenant ${status}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+

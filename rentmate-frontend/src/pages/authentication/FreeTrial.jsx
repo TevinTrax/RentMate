@@ -73,7 +73,7 @@ function FreeTrial() {
   };
 
   return (
-    <section className="w-full bg-gray-50">
+    <section className="w-full bg-green-50">
       <div className="container mx-auto py-20 grid grid-cols-1 md:grid-cols-2 gap-8">
 
         {/* Left Content */}
@@ -88,9 +88,9 @@ function FreeTrial() {
           </p>
 
           <ul className="mt-4 space-y-2 text-sm md:text-md text-gray-700">
-            <li><FaCircleCheck className="inline mr-2 text-blue-500" />14-day free trial, no credit card required</li>
-            <li><FaCircleCheck className="inline mr-2 text-blue-500" />Cancel anytime, no questions asked</li>
-            <li><FaCircleCheck className="inline mr-2 text-blue-500" />Trusted by 10,000+ property managers</li>
+            <li><FaCircleCheck className="inline mr-2 text-green-500" />14-day free trial, no credit card required</li>
+            <li><FaCircleCheck className="inline mr-2 text-green-500" />Cancel anytime, no questions asked</li>
+            <li><FaCircleCheck className="inline mr-2 text-green-500" />Trusted by 10,000+ property managers</li>
           </ul>
         </div>
 
@@ -112,7 +112,7 @@ function FreeTrial() {
                     type="text"
                     placeholder="Enter your first name"
                     value={formData.first_name}
-                    className="w-full pl-10 p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-10 p-2 text-sm md:text-md border rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500"
                     onChange={handleChange}
                     required
                   />
@@ -131,7 +131,7 @@ function FreeTrial() {
                     type="text"
                     placeholder="Enter your last name"
                     value={formData.last_name}
-                    className="w-full pl-10 p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-10 p-2 text-sm md:text-md border rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500"
                     onChange={handleChange}
                     required
                   />
@@ -153,7 +153,7 @@ function FreeTrial() {
                   onChange={handleChange}
                   value={formData.email}
                   placeholder="you@gmail.com"
-                  className="w-full pl-10 p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 p-2 text-sm md:text-md border rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 />
               </div>
@@ -163,7 +163,7 @@ function FreeTrial() {
               <label htmlFor="role" className="font-semibold text-md text-gray-800">
                 Select Your Role
               </label>
-              <select name="role" id="role" className="w-full p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required onChange={handleChange} value={formData.role}>
+              <select name="role" id="role" className="w-full p-2 text-sm md:text-md border rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500" required onChange={handleChange} value={formData.role}>
                 <option value="">Select Role</option>
                 <option value="Landlord">Landlord</option>
                 <option value="Tenant">Tenant</option>
@@ -185,7 +185,7 @@ function FreeTrial() {
                     placeholder="+254700000000"
                     value={formData.phone_number}
                     onChange={handleChange}
-                    className="w-full pl-10 p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-10 p-2 text-sm md:text-md border rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
                 </div>
@@ -204,7 +204,7 @@ function FreeTrial() {
                     placeholder="+254700000000"
                     value={formData.alt_phone_number}
                     onChange={handleChange}
-                    className="w-full pl-10 p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-10 p-2 text-sm md:text-md border rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
                 </div>
@@ -225,7 +225,7 @@ function FreeTrial() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full pl-10 p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 p-2 text-sm md:text-md border rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 />
               </div>
@@ -245,13 +245,13 @@ function FreeTrial() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
-                  className="w-full pl-10 p-2 text-sm md:text-md border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 p-2 text-sm md:text-md border rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500"
                   required 
                 />
               </div>
             </div>
 
-            <button className="w-full p-3 text-md bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:opacity-90 transition" type="submit">
+            <button className="w-full p-3 text-md bg-green-500 text-white font-semibold rounded-lg hover:opacity-90 transition" type="submit">
               Start 14-Day Free Trial
             </button>
 

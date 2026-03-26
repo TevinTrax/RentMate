@@ -3,19 +3,17 @@ import path from "path";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
-// Add a new property
+// Add a new property with auto-generated readable units
 export const addProperty = async (req, res) => {
+  const client = await pool.connect();
+
   try {
     const landlordId = req.user?.id;
-    if (!landlordId) {
-      return res.status(401).json({ error: "Unauthorized: landlord not found" });
-    }
+    if (!landlordId) return res.status(401).json({ error: "Unauthorized" });
 
-    // Handle uploaded files
     const imagePath = req.files?.image_url ? req.files.image_url[0].filename : null;
     const documentPath = req.files?.documents ? req.files.documents[0].filename : null;
 
-    // Extract form data
     const {
       apartment_name,
       property_type,
@@ -32,17 +30,35 @@ export const addProperty = async (req, res) => {
       monthly_rent,
       security_deposit,
       rent_due_day,
-      rent_due_type
+      rent_due_type,
+      bedrooms,
+      bathrooms,
+      size_sqft,
+      furnished,
+      has_pool,
+      has_parking,
+      has_gym,
+      wifi,
+      security,
+      description,
+      caretaker_first_name,
+      caretaker_last_name,
+      caretaker_phone_number,
+      caretaker_alt_phone_number,
+      caretaker_id_number,
+      rent_cycle
     } = req.body;
 
-    // Convert numeric fields
     const lat = latitude ? parseFloat(latitude) : null;
     const lng = longitude ? parseFloat(longitude) : null;
     const rent = monthly_rent ? parseFloat(monthly_rent) : null;
     const deposit = security_deposit ? parseFloat(security_deposit) : null;
     const dueDay = rent_due_day ? parseInt(rent_due_day, 10) : null;
+    const unitsCount = total_units ? parseInt(total_units, 10) : 1;
 
-    const result = await pool.query(
+    await client.query("BEGIN");
+
+    const propertyResult = await client.query(
       `
       INSERT INTO properties (
         landlord_id,
@@ -66,19 +82,39 @@ export const addProperty = async (req, res) => {
         documents,
         status,
         approval_status,
-        created_at
+        created_at,
+        bedrooms,
+        bathrooms,
+        size_sqft,
+        furnished,
+        has_pool,
+        has_parking,
+        has_gym,
+        wifi,
+        security,
+        description,
+        caretaker_first_name,
+        caretaker_last_name,
+        caretaker_phone_number,
+        caretaker_alt_phone_number,
+        caretaker_id_number,
+        rent_cycle,
+        property_status,
+        vacant_units
       )
       VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,
-        $10,$11,$12,$13,$14,$15,$16,$17,$18, $19, 'draft', 'pending',NOW()
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+        $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
+        $21,NOW(),$22,$23,$24,$25,$26,$27,$28,$29,
+        $30,$31,$32,$33,$34,$35,$36,$37,'Vacant',$4
       )
-      RETURNING *;
+      RETURNING id;
       `,
       [
         landlordId,
         apartment_name,
         property_type,
-        total_units,
+        unitsCount,
         manager_first_name,
         manager_last_name,
         country,
@@ -93,17 +129,68 @@ export const addProperty = async (req, res) => {
         dueDay,
         rent_due_type,
         imagePath,
-        documentPath
+        documentPath,
+        'Added',   // status
+        'pending', // approval_status
+        bedrooms || null,
+        bathrooms || null,
+        size_sqft || null,
+        furnished || false,
+        has_pool || false,
+        has_parking || false,
+        has_gym || false,
+        wifi || false,
+        security || false,
+        description || null,
+        caretaker_first_name || null,
+        caretaker_last_name || null,
+        caretaker_phone_number || null,
+        caretaker_alt_phone_number || null,
+        caretaker_id_number || null,
+        rent_cycle || 'MONTHLY'
       ]
     );
 
+    const propertyId = propertyResult.rows[0].id;
+
+    // --- Auto-generate readable house numbers ---
+    const unitValues = [];
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let letterIndex = 0;
+    let number = 1;
+
+    for (let i = 0; i < unitsCount; i++) {
+      const houseNumber = `${letters[letterIndex]}${number}`;
+      unitValues.push(`('${propertyId}', '${houseNumber}', false)`);
+
+      number++;
+      // wrap to next letter after 10 units (optional)
+      if (number > 10) {
+        number = 1;
+        letterIndex++;
+        if (letterIndex >= letters.length) letterIndex = 0; // loop letters if needed
+      }
+    }
+
+    if (unitValues.length > 0) {
+      await client.query(
+        `INSERT INTO units (property_id, house_number, is_occupied) VALUES ${unitValues.join(",")}`
+      );
+    }
+
+    await client.query("COMMIT");
+
     return res.status(201).json({
-      message: "Property added successfully",
-      property: result.rows[0]
+      success: true,
+      message: "Property added successfully with auto-generated units",
+      property_id: propertyId
     });
   } catch (error) {
-    console.error("Error in addProperty controller:", error);
+    await client.query("ROLLBACK");
+    console.error("Error in addProperty:", error);
     return res.status(500).json({ error: "Server error: " + error.message });
+  } finally {
+    client.release();
   }
 };
 
@@ -114,7 +201,7 @@ export const getMyProperties = async (req, res) => {
     if (!landlordId) return res.status(401).json({ error: "Unauthorized" });
 
     const result = await pool.query(
-      `SELECT * FROM properties WHERE landlord_id = $1 AND status= 'draft' ORDER BY created_at DESC`,
+      `SELECT * FROM properties WHERE landlord_id = $1 AND status= 'Added' ORDER BY created_at DESC`,
       [landlordId]
     );
 
@@ -207,7 +294,6 @@ export const downloadOwnershipDocument = async (req, res) => {
   }
 };
 
-
 export const deleteProperty = async (req, res) => {
   try {
     const { id } = req.params;
@@ -215,36 +301,55 @@ export const deleteProperty = async (req, res) => {
     const userRole = req.user.role;
 
     // Check if property exists
-    const propertyResult = await pool.query("SELECT * FROM properties WHERE id = $1", [id]);
-    if (!propertyResult.rows.length) return res.status(404).json({ error: "Property not found" });
+    const propertyResult = await pool.query(
+      "SELECT * FROM properties WHERE id = $1",
+      [id]
+    );
+
+    if (!propertyResult.rows.length)
+      return res.status(404).json({ error: "Property not found" });
 
     const property = propertyResult.rows[0];
 
-    // Only the owner (landlord) or admin can delete
+    // Only landlord owner or admin can delete
     if (property.landlord_id !== userId && userRole !== "admin") {
       return res.status(403).json({ error: "You are not allowed to delete this property" });
     }
 
-    // Delete files from uploads
+    // Delete property images
     if (property.image_url) {
       const imagePath = path.join(process.cwd(), "uploads", "Images", property.image_url);
       if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
     }
+
+    // Delete property documents (if multiple, assume comma-separated)
     if (property.documents) {
-      const docPath = path.join(process.cwd(), "uploads", "Documents", property.documents);
-      if (fs.existsSync(docPath)) fs.unlinkSync(docPath);
+      const docs = property.documents.split(",");
+      for (const doc of docs) {
+        const docPath = path.join(process.cwd(), "uploads", "Documents", doc.trim());
+        if (fs.existsSync(docPath)) fs.unlinkSync(docPath);
+      }
     }
 
-    // Delete property from DB
+    // Safe deletion: ensure foreign keys allow NULL
     await pool.query("DELETE FROM properties WHERE id = $1", [id]);
 
     return res.status(200).json({ message: "Property deleted successfully" });
+
   } catch (error) {
     console.error("Delete property error:", error);
+
+    // FK error message
+    if (error.code === "23503") {
+      return res.status(400).json({
+        error:
+          "Cannot delete property because it is linked to tenants. Remove tenants first or adjust foreign key constraints.",
+      });
+    }
+
     return res.status(500).json({ error: "Server error" });
   }
 };
-
 
 export const updateProperty = async (req, res) => {
   try {
@@ -485,7 +590,7 @@ export const postProperty = async (req, res) => {
       VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
         $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-        $21,$22,$23,$24,$25,$26,$27,$28,$29,$30, $31,$32,$33,$34,$35, $36, $37'posted','pending',NOW()
+        $21,$22,$23,$24,$25,$26,$27,$28,$29,$30, $31,$32,$33,$34,$35, $36, $37,'posted','pending',NOW()
       )
       RETURNING *;
       `,
@@ -677,5 +782,75 @@ export const rejectProperty = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+// GET PROPERTIES VISIBLE TO TENANTS
+export const getAvailableProperties = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+         id,
+         apartment_name,
+         property_type,
+         city,
+         country,
+         monthly_rent,
+         bedrooms,
+         bathrooms,
+         size_sqft,
+         furnished,
+         has_pool,
+         has_parking,
+         has_gym,
+         wifi,
+         security,
+         image_url,
+         total_units,
+         vacant_units,
+         description
+       FROM properties
+       WHERE status = 'Added' 
+         AND vacant_units > 0
+       ORDER BY created_at DESC`
+    );
+
+    res.status(200).json({
+      success: true,
+      count: result.rows.length,
+      properties: result.rows,
+    });
+  } catch (error) {
+    console.error("Error fetching available properties:", error);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+
+// GET units for a specific property
+export const getPropertyUnits = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+
+    if (!propertyId) {
+      return res.status(400).json({ success: false, error: "Property ID is required" });
+    }
+
+    const result = await pool.query(
+      `SELECT id, house_number, is_occupied 
+       FROM units 
+       WHERE property_id = $1 
+       ORDER BY house_number ASC`,
+      [propertyId]
+    );
+
+    res.status(200).json({
+      success: true,
+      count: result.rows.length,
+      units: result.rows
+    });
+  } catch (error) {
+    console.error("Error fetching units:", error);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };

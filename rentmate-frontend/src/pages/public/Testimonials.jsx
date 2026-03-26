@@ -5,7 +5,7 @@ function Testimonials() {
         {id:3, name:"Michael Johnson", role:"Property Manager", comment:"RentMate's features have streamlined our operations and improved communication with both landlords and tenants. Highly recommend!", rating:5},
     ];
     return(
-        <section className="w-full bg-blue-50 py-20">
+        <section className="w-full bg-green-50 py-20">
             <div className="container mx-auto">
                 <h1 className="text-4xl text-gray-800 text-center font-bold">Trusted by Property Owners Worldwide</h1>
                 <p className="text-lg text-gray-500 text-center pt-2">See what our customers have to say about their experience</p>

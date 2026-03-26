@@ -26,7 +26,7 @@ function FAQS() {
 
   return (
     <section className="w-full pt-20">
-      <div className="px-4 py-4 bg-gray-50">
+      <div className="px-4 py-4 bg-green-50">
         <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-3 mt-10">
           Frequently Asked Questions
         </h2>

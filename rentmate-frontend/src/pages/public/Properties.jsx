@@ -3,7 +3,7 @@ import PropertyNotice from "./PropertyNotice.jsx";
 
 function Properties() {
   return (
-    <section className="w-full">
+    <section className="w-full bg-green-50">
       <div className="container mx-auto block p-6">
         <h1 className="text-4xl text-center text-gray-800 py-3 mt-2 font-bold">
             Featured Properties
