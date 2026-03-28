@@ -5,7 +5,9 @@ import jwt from "jsonwebtoken";
 
 dotenv.config();
 
-// create user from admin
+// Password validation regex: min 8 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special char
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+
 export const registerUser = async (req, res) => {
   try {
     const {
@@ -19,20 +21,26 @@ export const registerUser = async (req, res) => {
       password
     } = req.body;
 
-    // check required fields
+    // Check required fields
     if (!first_name || !last_name || !email || !role || !password) {
+      return res.status(400).json({ error: "All required fields must be filled" });
+    }
+
+    // Validate password strength
+    if (!passwordRegex.test(password)) {
       return res.status(400).json({
-        error: "All required fields must be filled"
+        error: "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character"
       });
     }
 
+    //Check duplicates
     const duplicateCheck = await pool.query(
       `
       SELECT email, id_number, phone_number
       FROM users
       WHERE email = $1 OR id_number = $2 OR phone_number = $3
       `,
-      [email, id_number, phone_number]
+      [email.toLowerCase(), id_number, phone_number]
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -41,28 +49,29 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // hash password
+    // Hash password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // insert user
+    // Insert user
     const result = await pool.query(
       `
       INSERT INTO users
-      (first_name, last_name, email, id_number, phone_number, alt_phone_number, role, subscription_status, password_hash)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-      RETURNING id, first_name, last_name, email, role
+      (first_name, last_name, email, id_number, phone_number, alt_phone_number, role, subscription_status, password_hash, approval_status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      RETURNING id, first_name, last_name, email, role, approval_status
       `,
       [
         first_name,
         last_name,
-        email,
+        email.toLowerCase(),
         id_number,
         phone_number,
-        alt_phone_number,
+        alt_phone_number || null,
         role,
         "Trial",
-        hashedPassword
+        hashedPassword,
+        role.toLowerCase() === "landlord" ? "Pending" : "Approved"
       ]
     );
 
@@ -90,20 +99,22 @@ export const createUserAdmin = async (req, res) => {
       password
     } = req.body;
 
-    /* 1. Validation */
+    /* Required fields validation */
     if (!first_name || !last_name || !email || !id_number || !phone_number || !password) {
+      return res.status(400).json({ error: "All required fields must be filled" });
+    }
+
+    /*Password strength validation */
+    if (!passwordRegex.test(password)) {
       return res.status(400).json({
-        error: "All required fields must be filled",
+        error: "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
       });
     }
 
+    /*Duplicate check */
     const duplicateCheck = await pool.query(
-      `
-      SELECT email, id_number, phone_number
-      FROM users
-      WHERE email = $1 OR id_number = $2 OR phone_number = $3
-      `,
-      [email, id_number, phone_number]
+      `SELECT email, id_number, phone_number FROM users WHERE email=$1 OR id_number=$2 OR phone_number=$3`,
+      [email.toLowerCase(), id_number, phone_number]
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -112,33 +123,34 @@ export const createUserAdmin = async (req, res) => {
       });
     }
 
-    /* 4. Hash password (saltRounds RESTORED) */
+    /*Hash password */
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    /* 5. Insert user */
+    /*Insert user */
     const result = await pool.query(
       `
       INSERT INTO users
-      (first_name, last_name, role, email, phone_number, alt_phone_number, id_number, password_hash)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, first_name, last_name, email, role
+      (first_name, last_name, role, email, phone_number, alt_phone_number, id_number, password_hash, approval_status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING id, first_name, last_name, email, role, approval_status
       `,
       [
         first_name,
         last_name,
         "Admin",
-        email,
+        email.toLowerCase(),
         phone_number,
-        alt_phone_number,
+        alt_phone_number || null,
         id_number,
         hashedPassword,
+        "Approved" // Admins can be auto-approved
       ]
     );
 
     const admin = result.rows[0];
 
-    /* 6. Generate JWT token for admin */
+    /*Generate JWT token for admin */
     const token = jwt.sign(
       { id: admin.id, email: admin.email, role: admin.role },
       process.env.JWT_SECRET,
@@ -147,8 +159,8 @@ export const createUserAdmin = async (req, res) => {
 
     return res.status(201).json({
       message: "Admin account created successfully",
-      user: result.rows[0],
-      token,
+      user: admin,
+      token
     });
 
   } catch (error) {
@@ -172,12 +184,17 @@ export const createUserLandlord = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!first_name || !last_name || !email || !phone_number || !alt_phone_number || !password || !id_number) {
+    if (!first_name || !last_name || !email || !phone_number || !password || !id_number) {
       return res.status(400).json({ error: "All required fields must be filled" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    // Password validation (enforce frontend rules)
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        error:
+          "Password must be at least 8 characters, include letters, numbers, and special characters",
+      });
     }
 
     // Check if email already exists
@@ -187,12 +204,11 @@ export const createUserLandlord = async (req, res) => {
     }
 
     // Hash password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Trial setup: 14 days from now
     const trialStart = new Date();
-    const trialEnd = new Date();
+    const trialEnd = new Date(trialStart);
     trialEnd.setDate(trialStart.getDate() + 14);
 
     // Insert landlord into database
@@ -206,10 +222,10 @@ export const createUserLandlord = async (req, res) => {
       [
         first_name,
         last_name,
-        "Landlord", // enforce role
+        "Landlord",
         email,
         phone_number,
-        alt_phone_number,
+        alt_phone_number || null,
         id_number,
         hashedPassword,
         ref || null,
@@ -221,7 +237,7 @@ export const createUserLandlord = async (req, res) => {
 
     const landlord = result.rows[0];
 
-    // Generate JWT token for landlord
+    // Generate JWT token
     const token = jwt.sign(
       { id: landlord.id, email: landlord.email, role: landlord.role },
       process.env.JWT_SECRET,
@@ -233,10 +249,9 @@ export const createUserLandlord = async (req, res) => {
       user: landlord,
       token,
     });
-
   } catch (error) {
     console.error("Create landlord error:", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -273,6 +288,23 @@ export const createUserTenant = async (req, res) => {
         success: false,
         error: "All required fields must be filled, including apartment and unit",
       });
+    }
+
+    // ===============================
+    // PASSWORD VALIDATION
+    // ===============================
+    const validatePassword = (password) => {
+      if (password.length < 8) return "Password must be at least 8 characters long";
+      if (!/[A-Z]/.test(password)) return "Password must include at least one uppercase letter";
+      if (!/[a-z]/.test(password)) return "Password must include at least one lowercase letter";
+      if (!/\d/.test(password)) return "Password must include at least one number";
+      if (!/[\W_]/.test(password)) return "Password must include at least one special character";
+      return "";
+    };
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ success: false, error: passwordError });
     }
 
     await client.query("BEGIN");

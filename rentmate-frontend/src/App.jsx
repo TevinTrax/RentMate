@@ -33,6 +33,7 @@ import GetStarted from "./pages/authentication/GetStarted.jsx";
 import AdminRegistration from "./pages/authentication/AdminRegistration.jsx";
 import LandlordRegistration from "./pages/authentication/LandlordRegistration.jsx";
 import TenantRegistration from "./pages/authentication/TenantRegistration.jsx";
+import ResetPassword from "./pages/authentication/ResetPassword.jsx";
 
 /* =======================
    ADMIN PAGES
@@ -99,6 +100,7 @@ function App() {
 
               {/* ========= AUTH ROUTES ========= */}
               <Route path="sign-in" element={<SignIn />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="get-started" element={<GetStarted />} />
               <Route path="register/:role" element={<AdminRegistration />} />

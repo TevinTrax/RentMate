@@ -1,118 +1,211 @@
-import { FaPaperPlane, FaEnvelope, FaPhone, FaMapMarkerAlt } from "react-icons/fa";
+import {
+  FaPaperPlane,
+  FaEnvelope,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaClock,
+  FaHeadset,
+} from "react-icons/fa";
 
 function Contact() {
   return (
-    <section id="contact" className="w-full py-5 bg-green-50">
-      <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">
-          Contact Us
+    <section
+      id="contact"
+      className="relative w-full py-20 bg-gradient-to-b from-white via-green-50 to-emerald-50 overflow-hidden"
+    >
+      {/* Background Glow */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-green-200/30 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-80 h-80 bg-emerald-200/30 rounded-full blur-3xl"></div>
+
+      <div className="container mx-auto px-6 relative z-10">
+        {/* Badge */}
+        <div className="flex justify-center mb-4">
+          <span className="bg-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full shadow-sm border border-green-200">
+            We’re Here to Help
+          </span>
+        </div>
+
+        {/* Heading */}
+        <h1 className="text-4xl md:text-5xl font-bold text-center text-gray-900 leading-tight">
+          Let’s Talk About Your
+          <br />
+          <span className="text-green-600">Property Management Needs</span>
         </h1>
-        <p className="text-md md:text-lg text-gray-700 text-center mb-10">
-          We'd love to hear from you! Send us your questions or feedback.
+
+        {/* Subheading */}
+        <p className="max-w-3xl mx-auto text-center text-base md:text-lg text-gray-600 mt-5 leading-relaxed mb-12">
+          Have a question, need support, or want to learn more about RentMate?
+          Reach out and our team will get back to you as soon as possible.
         </p>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Left: Contact Form */}
-          <div className="bg-white rounded-2xl shadow-md p-8">
-            <form className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-8 items-stretch">
+          {/* LEFT: CONTACT FORM */}
+          <div className="bg-white/85 backdrop-blur-xl border border-green-100 rounded-3xl shadow-sm p-6 md:p-8">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Send Us a Message</h2>
+              <p className="text-sm md:text-base text-gray-500 mt-2">
+                Fill in the form and we’ll respond shortly.
+              </p>
+            </div>
+
+            <form className="space-y-5">
+              {/* First + Last Name */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-md text-gray-800 pb-2">First Name</label>
+                  <label className="block text-sm md:text-base font-medium text-gray-800 mb-2">
+                    First Name
+                  </label>
                   <input
                     type="text"
                     placeholder="Enter your first name"
-                    className="w-full text-sm rounded-2xl px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                     required
                   />
                 </div>
+
                 <div>
-                  <label className="block text-md text-gray-800 pb-2">Last Name</label>
+                  <label className="block text-sm md:text-base font-medium text-gray-800 mb-2">
+                    Last Name
+                  </label>
                   <input
                     type="text"
                     placeholder="Enter your last name"
-                    className="w-full text-sm rounded-2xl px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                     required
                   />
                 </div>
               </div>
 
+              {/* Email */}
               <div>
-                <label className="block text-md text-gray-800 pb-2">Email Address</label>
+                <label className="block text-sm md:text-base font-medium text-gray-800 mb-2">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="w-full text-sm rounded-2xl px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                   required
                 />
               </div>
 
+              {/* Subject */}
               <div>
-                <label className="block text-md text-gray-800 pb-2">Subject</label>
+                <label className="block text-sm md:text-base font-medium text-gray-800 mb-2">
+                  Subject
+                </label>
                 <input
                   type="text"
                   placeholder="How can we help you?"
-                  className="w-full text-sm rounded-2xl px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                   required
                 />
               </div>
 
+              {/* Message */}
               <div>
-                <label className="block text-md text-gray-800 pb-2">Message</label>
+                <label className="block text-sm md:text-base font-medium text-gray-800 mb-2">
+                  Message
+                </label>
                 <textarea
                   placeholder="Tell us more about your inquiry..."
-                  rows={5}
-                  className="w-full text-sm rounded-2xl p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  rows={6}
+                  className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition resize-none"
                   required
                 ></textarea>
               </div>
 
+              {/* Button */}
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-md font-bold"
+                className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl text-sm md:text-base font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
               >
-                <FaPaperPlane size={16} />
+                <FaPaperPlane size={15} />
                 Send Message
               </button>
             </form>
           </div>
 
-          {/* Right: Contact Info */}
-          <div className="bg-gradient-to-br from-green-600 to-green-500   rounded-2xl shadow-md text-white p-10 flex flex-col space-y-4 justify-center">
-            <h2 className="text-xl md:text-2xl font-semibold">Get In Touch</h2>
+          {/* RIGHT: CONTACT INFO */}
+          <div className="relative bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 rounded-3xl shadow-sm text-white p-8 md:p-10 flex flex-col justify-between overflow-hidden">
+            {/* Glow accents */}
+            <div className="absolute -top-16 -right-16 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-lime-300/10 rounded-full blur-3xl"></div>
 
-            <div className="flex items-start gap-4">
-              <FaMapMarkerAlt size={24} className="mt-1" />
-              <div>
-                <h3 className="text-md font-medium">Office Address</h3>
-                <p className="text-sm">Nairobi, Kenya</p>
+            <div className="relative z-10">
+              {/* Top */}
+              <div className="mb-8">
+                <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 rounded-full px-4 py-2 text-sm font-medium mb-4">
+                  <FaHeadset size={14} />
+                  Customer Support
+                </div>
+
+                <h2 className="text-2xl md:text-3xl font-bold leading-tight">
+                  Get In Touch With RentMate
+                </h2>
+
+                <p className="text-sm md:text-base text-white/85 mt-3 leading-relaxed">
+                  Whether you're a landlord, tenant, or admin, we’re here to help
+                  you get the most out of your property management experience.
+                </p>
+              </div>
+
+              {/* Contact Cards */}
+              <div className="space-y-4">
+                <div className="bg-white/10 border border-white/15 rounded-2xl p-4 backdrop-blur-sm flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+                    <FaMapMarkerAlt size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">Office Address</h3>
+                    <p className="text-sm text-white/85 mt-1">Nairobi, Kenya</p>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 border border-white/15 rounded-2xl p-4 backdrop-blur-sm flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+                    <FaEnvelope size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">Email Us</h3>
+                    <a
+                      href="mailto:rentmatesupport@gmail.com"
+                      className="text-sm text-white/85 hover:text-white hover:underline mt-1 inline-block"
+                    >
+                      rentmatesupport@gmail.com
+                    </a>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 border border-white/15 rounded-2xl p-4 backdrop-blur-sm flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+                    <FaPhone size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">Call Us</h3>
+                    <a
+                      href="tel:+254790636213"
+                      className="text-sm text-white/85 hover:text-white hover:underline mt-1 inline-block"
+                    >
+                      +254 790 636 213
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
-              <FaEnvelope size={22} className="mt-1" />
+            {/* Bottom Support Note */}
+            <div className="relative z-10 mt-8 pt-6 border-t border-white/20 flex items-center gap-3">
+              <div className="h-11 w-11 rounded-2xl bg-white/15 flex items-center justify-center">
+                <FaClock size={18} />
+              </div>
               <div>
-                <h3 className="text-md font-medium">Email Us</h3>
-                <a href="mailto:rentmatesupport@gmail.com" className="hover:underline text-sm">
-                  rentmatesupport@gmail.com
-                </a>
+                <p className="font-semibold text-sm md:text-base">Fast Response Time</p>
+                <p className="text-sm text-white/80">
+                  We usually respond within 24 hours on business days.
+                </p>
               </div>
             </div>
-
-            <div className="flex items-start gap-4">
-              <FaPhone size={22} className="mt-1" />
-              <div>
-                <h3 className="text-md font-medium">Call Us</h3>
-                <a href="tel:+254790636213" className="hover:underline text-sm">
-                  +254 790 636 213
-                </a>
-              </div>
-            </div>
-
-            <hr className="border-white/30" />
-
-            <p className="text-sm">
-              Our support team typically responds within 24 hours during business days.
-            </p>
           </div>
         </div>
       </div>

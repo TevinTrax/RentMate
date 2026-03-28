@@ -13,86 +13,148 @@ function Features() {
   const services = [
     {
       title: "Tenant Management",
-      description: "Easy onboarding, digital leases, and automated reminders for seamless tenant relationships.",
-      color: "bg-blue-500",
-      icon: <FaUsers size={24} color="white" />,
+      description:
+        "Easy onboarding, digital leases, and automated reminders for seamless tenant relationships.",
+      color: "from-green-500 to-emerald-600",
+      icon: <FaUsers size={22} className="text-white" />,
     },
     {
       title: "Secure Payments",
-      description: "Integrated payment processing with auto-generated receipts and payment history tracking.",
-      color: "bg-green-500",
-      icon: <FaCreditCard size={24} color="white" />,
+      description:
+        "Integrated payment processing with auto-generated receipts and payment history tracking.",
+      color: "from-lime-500 to-green-600",
+      icon: <FaCreditCard size={22} className="text-white" />,
     },
     {
       title: "Maintenance Requests",
-      description: "Streamlined maintenance workflow with task assignment and progress tracking.",
-      color: "bg-orange-500",
-      icon: <FaWrench size={24} color="white" />,
+      description:
+        "Streamlined maintenance workflow with task assignment and progress tracking.",
+      color: "from-emerald-500 to-teal-600",
+      icon: <FaWrench size={22} className="text-white" />,
     },
     {
       title: "Analytics & Reports",
-      description: "Generate comprehensive reports with insights into income, occupancy, and tenant activity.",
-      color: "bg-purple-500",
-      icon: <FaChartBar size={24} color="white" />,
+      description:
+        "Generate comprehensive reports with insights into income, occupancy, and tenant activity.",
+      color: "from-green-600 to-emerald-700",
+      icon: <FaChartBar size={22} className="text-white" />,
     },
     {
       title: "Smart Notifications",
-      description: "Real-time alerts for payments, lease expirations, and maintenance updates.",
-      color: "bg-blue-500",
-      icon: <FaBell size={24} color="white" />,
+      description:
+        "Real-time alerts for payments, lease expirations, and maintenance updates.",
+      color: "from-emerald-500 to-green-600",
+      icon: <FaBell size={22} className="text-white" />,
     },
     {
       title: "Role-Based Access",
-      description: "Secure user roles for admin, landlord, and tenant with appropriate permissions.",
-      color: "bg-green-500",
-      icon: <FaShieldAlt size={24} color="white" />,
+      description:
+        "Secure user roles for admin, landlord, and tenant with appropriate permissions.",
+      color: "from-green-500 to-lime-600",
+      icon: <FaShieldAlt size={22} className="text-white" />,
     },
     {
       title: "Mobile Responsive",
-      description: "Perfect experience across desktop, tablet, and mobile devices.",
-      color: "bg-blue-600",
-      icon: <FaMobileAlt size={24} color="white" />,
+      description:
+        "Perfect experience across desktop, tablet, and mobile devices.",
+      color: "from-teal-500 to-emerald-600",
+      icon: <FaMobileAlt size={22} className="text-white" />,
     },
     {
       title: "24/7 Support",
-      description: "Round-the-clock customer support to help you manage your properties efficiently.",
-      color: "bg-pink-500",
-      icon: <FaClock size={24} color="white" />,
+      description:
+        "Round-the-clock customer support to help you manage your properties efficiently.",
+      color: "from-green-500 to-emerald-700",
+      icon: <FaClock size={22} className="text-white" />,
     },
   ];
 
   return (
-    <section id="features" className="w-full bg-green-50">
-      <div className="container mx-auto p-6">
-        <h1 className="max-w-2xl mx-auto pt-10 text-center text-gray-800 text-4xl md:leading-tight py-3 font-bold">
-          Everything You Need to{" "}
+    <section
+      id="features"
+      className="relative w-full bg-gradient-to-b from-white via-green-50 to-emerald-50 py-20 overflow-hidden"
+    >
+      {/* Background Glow */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-green-200/30 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-80 h-80 bg-emerald-200/30 rounded-full blur-3xl"></div>
+
+      <div className="container mx-auto px-6 relative z-10">
+        {/* Small Badge */}
+        <div className="flex justify-center mb-4">
+          <span className="bg-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full shadow-sm border border-green-200">
+            Powerful Features for Modern Property Management
+          </span>
+        </div>
+
+        {/* Heading */}
+        <h1 className="max-w-3xl mx-auto text-center text-gray-900 text-4xl md:text-5xl font-bold leading-tight">
+          Everything You Need to
           <br />
-          <span className="text-green-600">Manage Properties</span>
+          <span className="text-green-600">Manage Properties Smarter</span>
         </h1>
 
-        <p className="max-w-4xl mx-auto text-center text-md md:text-xl text-gray-700 md:leading-relaxed mt-4">
-          From tenant onboarding to rent collection, our comprehensive platform handles every aspect of property management with ease and efficiency.
+        {/* Subheading */}
+        <p className="max-w-3xl mx-auto text-center text-gray-600 text-base md:text-lg leading-relaxed mt-5">
+          From tenant onboarding to rent collection, RentMate helps landlords,
+          property managers, and tenants stay organized with one seamless platform.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
+        {/* Top Mini Highlights */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10 mb-12">
+          <div className="bg-white/70 backdrop-blur-md border border-green-100 rounded-2xl p-4 text-center shadow-sm">
+            <h3 className="text-2xl font-bold text-green-600">10k+</h3>
+            <p className="text-sm text-gray-600 mt-1">Property Owners</p>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-md border border-green-100 rounded-2xl p-4 text-center shadow-sm">
+            <h3 className="text-2xl font-bold text-green-600">99.9%</h3>
+            <p className="text-sm text-gray-600 mt-1">Platform Uptime</p>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-md border border-green-100 rounded-2xl p-4 text-center shadow-sm">
+            <h3 className="text-2xl font-bold text-green-600">24/7</h3>
+            <p className="text-sm text-gray-600 mt-1">Customer Support</p>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-md border border-green-100 rounded-2xl p-4 text-center shadow-sm">
+            <h3 className="text-2xl font-bold text-green-600">15 min</h3>
+            <p className="text-sm text-gray-600 mt-1">Quick Setup</p>
+          </div>
+        </div>
+
+        {/* Feature Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {services.map((service, index) => (
             <div
               key={index}
-              className="border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow bg-white p-4 flex flex-col"
+              className="group relative bg-white/85 backdrop-blur-xl border border-green-100 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden min-h-[250px] flex flex-col"
             >
+              {/* Soft top glow */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 via-emerald-500 to-lime-400"></div>
+
+              {/* Icon */}
               <div
-                className={`h-12 w-12 rounded-xl mb-4 flex items-center justify-center ${service.color}`}
+                className={`h-14 w-14 rounded-2xl mb-5 flex items-center justify-center bg-gradient-to-br ${service.color} shadow-md group-hover:scale-110 transition-transform duration-300`}
               >
                 {service.icon}
               </div>
 
-              <h2 className="text-lg font-semibold text-gray-900">
+              {/* Title */}
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">
                 {service.title}
               </h2>
 
-              <p className="text-gray-600 text-md mt-2">
+              {/* Description */}
+              <p className="text-gray-600 text-sm md:text-base leading-relaxed">
                 {service.description}
               </p>
+
+              {/* Bottom accent */}
+              <div className="mt-auto pt-5">
+                <span className="inline-block text-green-600 text-sm font-semibold group-hover:translate-x-1 transition-transform duration-300">
+                  Learn more →
+                </span>
+              </div>
             </div>
           ))}
         </div>
