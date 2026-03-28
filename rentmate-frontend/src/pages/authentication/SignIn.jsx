@@ -13,18 +13,21 @@ function SignIn() {
   // Validation errors
   const [passwordError, setPasswordError] = useState("");
 
-  // 2FA state
+  // Login / OTP state
   const [isOTPStep, setIsOTPStep] = useState(false);
   const [userId, setUserId] = useState(null);
   const [otp, setOTP] = useState("");
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [pendingUserRole, setPendingUserRole] = useState(null); // store role for OTP
+  const [loginInProgress, setLoginInProgress] = useState(false);
 
+  // Handlers
   const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
   const handleOTPChange = (e) => setOTP(e.target.value);
   const togglePassword = () => setPasswordVisible((prev) => !prev);
 
-  // Password validation rules
+  // Password validation
   const validatePassword = (password) => {
     const errors = [];
     if (password.length < 8) errors.push("At least 8 characters");
@@ -35,6 +38,7 @@ function SignIn() {
     return errors;
   };
 
+  // Navigate based on role
   const navigateDashboard = (role) => {
     switch (role.toLowerCase()) {
       case "admin": navigate("/admin/dashboard"); break;
@@ -44,7 +48,7 @@ function SignIn() {
     }
   };
 
-  // Login / Send OTP
+  // LOGIN / SEND OTP
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -61,24 +65,48 @@ function SignIn() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+
       const data = await res.json();
+
       if (!res.ok) return alert(data.error || "Login failed");
 
-      if (data.message === "OTP sent to email") {
-        setIsOTPStep(true);
-        setUserId(data.userId);
-        alert("OTP sent to your email");
+      // If 2FA is enabled → show OTP step
+      if (data.message && data.message.toLowerCase().includes("otp")) {
+        setIsOTPStep(true);          // show OTP form
+        setUserId(data.userId);      // store user ID for verification
+        setPendingUserRole(formData.role); // store role
+        setOTP("");                  // reset OTP input
+        setOtpAttempts(0);           // reset attempts
+        setResendCooldown(60);       // start resend cooldown
+
+        // Start cooldown countdown
+        const interval = setInterval(() => {
+          setResendCooldown(prev => {
+            if (prev <= 1) { 
+              clearInterval(interval); 
+              return 0; 
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
         return;
       }
 
-      sessionStorage.setItem("token", data.token);
-      sessionStorage.setItem("role", data.user.role);
-      sessionStorage.setItem("approval_status", data.user.approval_status);
-      navigateDashboard(data.user.role);
-    } catch (err) { alert("Network error: " + err.message); }
+      // 2FA disabled → direct login
+      if (data.user) {
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("role", data.user.role);
+        sessionStorage.setItem("approval_status", data.user.approval_status);
+        navigateDashboard(data.user.role);
+      }
+
+    } catch (err) {
+      alert("Network error: " + err.message);
+    }
   };
 
-  // Verify OTP
+  // ===== VERIFY OTP =====
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     if (otpAttempts >= 3) return alert("Maximum OTP attempts reached. Please request a new OTP.");
@@ -89,35 +117,64 @@ function SignIn() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, otp }),
       });
+
       const data = await res.json();
-      if (!res.ok) { setOtpAttempts(prev => prev + 1); return alert(data.error || "OTP verification failed"); }
+
+      if (!res.ok) {
+        setOtpAttempts(prev => prev + 1);
+        return alert(data.error || "OTP verification failed");
+      }
 
       setOtpAttempts(0);
       sessionStorage.setItem("token", data.token);
       sessionStorage.setItem("role", data.user.role);
       sessionStorage.setItem("approval_status", data.user.approval_status);
       navigateDashboard(data.user.role);
-    } catch (err) { alert("Network error: " + err.message); }
+
+    } catch (err) {
+      alert("Network error: " + err.message);
+    }
   };
 
-  // Resend OTP
+  // ===== RESEND OTP =====
   const handleResendOTP = async () => {
-    if (resendCooldown > 0) return;
+    if (resendCooldown > 0) return; // still cooling down
+
     try {
       const res = await fetch("http://localhost:5000/api/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
-      const data = await res.json();
-      if (!res.ok) return alert(data.error || "Failed to resend OTP");
 
-      alert("New OTP sent to your email");
-      setResendCooldown(60);
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 429) {
+          alert(data.error); // show remaining cooldown from backend
+          return;
+        } else {
+          return alert(data.error || "Failed to resend OTP");
+        }
+      }
+
+      alert(data.message);
+
+      // Start cooldown timer (sync with backend)
+      setResendCooldown(OTP_RESEND_COOLDOWN);
       const interval = setInterval(() => {
-        setResendCooldown(prev => { if (prev <= 1) { clearInterval(interval); return 0; } return prev - 1; });
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } catch (err) { alert("Network error: " + err.message); }
+
+    } catch (err) {
+      alert("Network error: " + err.message);
+    }
   };
 
   return (
@@ -253,7 +310,8 @@ function SignIn() {
 
             <button
               type="submit"
-              className="w-full rounded-xl text-lg font-semibold text-white bg-green-600 py-3.5 hover:bg-green-700 transition shadow-lg hover:shadow-xl"
+              disabled={loginInProgress}
+              className={`w-full rounded-xl text-lg font-semibold text-white bg-green-600 py-3.5 hover:bg-green-700 transition shadow-lg hover:shadow-xl ${loginInProgress ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {isOTPStep ? "Verify OTP" : "Sign In"}
             </button>

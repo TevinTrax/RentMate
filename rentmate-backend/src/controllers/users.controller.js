@@ -1302,3 +1302,41 @@ export const getApprovedTenant = async (req, res) => {
     });
   }
 };
+
+// delete user
+export const deleteUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (!id) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    // Check if user exists
+    const userCheck = await pool.query(
+      "SELECT id, role FROM users WHERE id = $1",
+      [id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // OPTIONAL: prevent deleting admin accounts
+    // if (userCheck.rows[0].role?.toLowerCase() === "admin") {
+    //   return res.status(403).json({ error: "Admin users cannot be deleted" });
+    // }
+
+    // Delete related OTP records first
+    await pool.query("DELETE FROM otp_verifications WHERE user_id = $1", [id]);
+
+    // Delete user
+    await pool.query("DELETE FROM users WHERE id = $1", [id]);
+
+    return res.status(200).json({ message: "User deleted successfully" });
+
+  } catch (error) {
+    console.error("Delete user error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

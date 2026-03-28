@@ -100,7 +100,7 @@ function App() {
 
               {/* ========= AUTH ROUTES ========= */}
               <Route path="sign-in" element={<SignIn />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route path="reset-password/:token" element={<ResetPassword />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="get-started" element={<GetStarted />} />
               <Route path="register/:role" element={<AdminRegistration />} />

@@ -343,6 +343,43 @@ function AdminUsers() {
   };
 
 
+  const handleDeleteUser = async (userId) => {
+    const confirmDelete = window.confirm("Are you sure you want to permanently delete this user?");
+    if (!confirmDelete) return;
+
+    try {
+      const token = sessionStorage.getItem("token");
+
+      const res = await fetch(`http://localhost:5000/api/users/delete-users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return alert(data.error || "Failed to delete user");
+      }
+
+      alert(data.message || "User deleted successfully");
+
+      // Remove deleted user from frontend list immediately
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+
+      // Close modal
+      setShowDetailsModal(false);
+      setSelectedUser(null);
+
+    } catch (error) {
+      console.error("Delete user error:", error);
+      alert("Network error: " + error.message);
+    }
+  };
+
+
   return (
     <section className="w-full p-4">
       <div className="p-4">
@@ -605,158 +642,152 @@ function AdminUsers() {
             </div>
 
 
-            {/* view details modal */}
-            {showDetailsModal && selectedUser && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center 
-                              bg-black/50 backdrop-blur-sm p-4">
+{/* view details modal */}
+{showDetailsModal && selectedUser && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="bg-white w-full max-w-5xl max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
 
-                <div className="bg-white w-full max-w-5xl max-h-[85vh] rounded-2xl shadow-2xl 
-                                overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+      {/* HEADER */}
+      <div className="flex items-center justify-between px-8 py-4 border-b bg-gray-50">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">
+            {selectedUser.first_name} {selectedUser.last_name}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            User Profile Overview
+          </p>
+        </div>
 
-                  {/* HEADER */}
-                  <div className="flex items-center justify-between px-8 py-4 border-b bg-gray-50">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-800">
-                        {selectedUser.first_name} {selectedUser.last_name}
-                      </h2>
-                      <p className="text-sm text-gray-500 mt-1">
-                        User Profile Overview
-                      </p>
-                    </div>
+        <button
+          onClick={() => setShowDetailsModal(false)}
+          className="text-gray-400 hover:text-red-500 text-xl font-bold transition"
+        >
+          ✕
+        </button>
+      </div>
 
-                    <button
-                      onClick={() => setShowDetailsModal(false)}
-                      className="text-gray-400 hover:text-red-500 text-xl font-bold transition"
-                    >
-                      ✕
-                    </button>
-                  </div>
+      {/* BODY */}
+      <div className="px-8 py-8 space-y-8 max-h-[60vh] overflow-y-auto">
 
-                  {/* BODY */}
-                  <div className="px-8 py-8 space-y-8 max-h-[60vh] overflow-y-auto">
+        {/* PERSONAL INFORMATION */}
+        <Section title="Personal Information">
+          <InfoItem icon={<Mail size={18} />} label="Email" value={selectedUser.email || "—"} />
+          <InfoItem icon={<Phone size={18} />} label="Phone" value={selectedUser.phone_number || "—"} />
+          <InfoItem icon={<Phone size={18} />} label="Alternative Phone" value={selectedUser.alt_phone_number || "—"} />
+          <InfoItem icon={<Hash size={18} />} label="ID Number" value={selectedUser.id_number || "—"} />
+          <InfoItem icon={<UserPlus size={18} />} label="Role" value={selectedUser.role || "—"} />
 
-                    {/* PERSONAL INFORMATION */}
-                    <Section title="Personal Information">
-                      <InfoItem icon={<Mail size={18} />} label="Email" value={selectedUser.email} />
-                      <InfoItem icon={<Phone size={18} />} label="Phone" value={selectedUser.phone_number} />
-                      <InfoItem icon={<Phone size={18} />} label="Alternative Phone" value={selectedUser.alt_phone_number} />
-                      <InfoItem icon={<Hash size={18} />} label="ID Number" value={selectedUser.id_number} />
-                      <InfoItem icon={<UserPlus size={18} />} label="Role" value={selectedUser.role} />
+          <InfoItem
+            icon={<CheckCircle2 size={18} />}
+            label="Account Status"
+            value={<StatusBadge status={selectedUser.account_status} />}
+          />
 
-                      <InfoItem
-                        icon={<CheckCircle2 size={18} />}
-                        label="Account Status"
-                        value={
-                          <StatusBadge status={selectedUser.account_status} />
-                        }
-                      />
+          <InfoItem
+            icon={<CheckCircle2 size={18} />}
+            label="Approval Status"
+            value={<StatusBadge status={selectedUser.approval_status} />}
+          />
 
-                      <InfoItem
-                        icon={<CheckCircle2 size={18} />}
-                        label="Approval Status"
-                        value={
-                          <StatusBadge status={selectedUser.approval_status} />
-                        }
-                      />
+          <InfoItem
+            icon={<Verified size={18} />}
+            label="Verification"
+            value={
+              selectedUser.is_verified ? (
+                <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-600 font-medium">
+                  Verified
+                </span>
+              ) : (
+                <span className="px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-600 font-medium">
+                  Not Verified
+                </span>
+              )
+            }
+          />
+        </Section>
 
-                      <InfoItem
-                        icon={<Verified size={18} />}
-                        label="Verification"
-                        value={
-                          selectedUser.is_verified ? (
-                            <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-600 font-medium">
-                              Verified
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-600 font-medium">
-                              Not Verified
-                            </span>
-                          )
-                        }
-                      />
-                    </Section>
+        {/* PROPERTY INFORMATION */}
+        <Section title="Property Information">
+          <InfoItem icon={<Home size={18} />} label="Apartment" value={selectedUser.apartment_name || "—"} />
+          <InfoItem icon={<Hash size={18} />} label="Unit Number" value={selectedUser.house_number || "—"} />
+          <InfoItem icon={<UserCog2 size={18} />} label="Landlord" value="—" />
+        </Section>
 
-                    {/* PROPERTY INFORMATION */}
-                    <Section title="Property Information">
-                      <InfoItem icon={<Home size={18} />} label="Apartment" value={selectedUser.apartment_name} />
-                      <InfoItem icon={<Hash size={18} />} label="Unit Number" value={selectedUser.house_number} />
-                      <InfoItem icon={<UserCog2 size={18} />} label="Landlord" value="—" />
-                    </Section>
+        {/* ACCOUNT INFORMATION */}
+        <Section title="Account Information">
+          <InfoItem icon={<Hash size={18} />} label="Reference" value={selectedUser.reference || "—"} />
+          <InfoItem
+            icon={<Clock size={18} />}
+            label="Joined"
+            value={selectedUser.created_at ? formatDate(selectedUser.created_at) : "—"}
+          />
+          <InfoItem
+            icon={<Clock size={18} />}
+            label="Last Login"
+            value={selectedUser.last_login ? formatDate(selectedUser.last_login) : "Never"}
+          />
+        </Section>
 
-                    {/* ACCOUNT INFORMATION */}
-                    <Section title="Account Information">
-                      <InfoItem icon={<Hash size={18} />} label="Reference" value={selectedUser.reference} />
-                      <InfoItem
-                        icon={<Clock size={18} />}
-                        label="Joined"
-                        value={formatDate(selectedUser.created_at)}
-                      />
-                      <InfoItem
-                        icon={<Clock size={18} />}
-                        label="Last Login"
-                        value={selectedUser.last_login ? formatDate(selectedUser.last_login) : "Never"}
-                      />
-                    </Section>
+        {/* SUBSCRIPTION INFORMATION */}
+        <div className="rounded-xl p-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-indigo-100 shadow-sm">
+          <h3 className="text-lg font-semibold text-indigo-700 mb-6">
+            Subscription Information
+          </h3>
 
-                    {/* SUBSCRIPTION INFORMATION */}
-                    <div className="rounded-xl p-6 bg-gradient-to-r 
-                                    from-blue-50 via-indigo-50 to-purple-50 
-                                    border border-indigo-100 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <InfoItem
+              icon={<CheckCircle2 size={18} />}
+              label="Subscription Status"
+              value={<SubscriptionBadge status={selectedUser.subscription_status} />}
+            />
 
-                      <h3 className="text-lg font-semibold text-indigo-700 mb-6">
-                        Subscription Information
-                      </h3>
+            <InfoItem
+              icon={<Clock size={18} />}
+              label="Trial Start Date"
+              value={selectedUser.trial_start_date ? formatDate(selectedUser.trial_start_date) : "—"}
+            />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <InfoItem
+              icon={<Clock size={18} />}
+              label="Trial End Date"
+              value={selectedUser.trial_end_date ? formatDate(selectedUser.trial_end_date) : "—"}
+            />
 
-                        <InfoItem
-                          icon={<CheckCircle2 size={18} />}
-                          label="Subscription Status"
-                          value={<SubscriptionBadge status={selectedUser.subscription_status} />}
-                        />
+            <InfoItem
+              icon={<Clock size={18} />}
+              label="Subscription Start"
+              value={selectedUser.subscription_start_date ? formatDate(selectedUser.subscription_start_date) : "—"}
+            />
 
-                        <InfoItem
-                          icon={<Clock size={18} />}
-                          label="Trial Start Date"
-                          value={formatDate(selectedUser.trial_start_date)}
-                        />
+            <InfoItem
+              icon={<Clock size={18} />}
+              label="Subscription End"
+              value={selectedUser.subscription_end_date ? formatDate(selectedUser.subscription_end_date) : "—"}
+            />
+          </div>
+        </div>
+      </div>
 
-                        <InfoItem
-                          icon={<Clock size={18} />}
-                          label="Trial End Date"
-                          value={formatDate(selectedUser.trial_end_date)}
-                        />
+      {/* FOOTER */}
+      <div className="flex justify-end items-center gap-3 px-8 py-4 border-t bg-gray-50">
+        <button
+          onClick={() => handleDeleteUser(selectedUser.id)}
+          className="px-6 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white transition font-medium shadow-sm"
+        >
+          Delete User
+        </button>
 
-                        <InfoItem
-                          icon={<Clock size={18} />}
-                          label="Subscription Start"
-                          value={formatDate(selectedUser.subscription_start_date)}
-                        />
+        <button
+          onClick={() => setShowDetailsModal(false)}
+          className="px-6 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 transition font-medium"
+        >
+          Close
+        </button>
+      </div>
 
-                        <InfoItem
-                          icon={<Clock size={18} />}
-                          label="Subscription End"
-                          value={formatDate(selectedUser.subscription_end_date)}
-                        />
-
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* FOOTER */}
-                  <div className="flex justify-end px-8 py-4 border-t bg-gray-50">
-                    <button
-                      onClick={() => setShowDetailsModal(false)}
-                      className="px-6 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 transition font-medium"
-                    >
-                      Close
-                    </button>
-                  </div>
-
-                </div>
-              </div>
-            )}
+    </div>
+  </div>
+)}
 
             {/* edit modal */}
             {showEditModal && selectedUser && (

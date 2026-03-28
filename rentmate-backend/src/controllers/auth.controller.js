@@ -13,7 +13,7 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 // Cooldown time for resending OTP (in seconds)
 const OTP_RESEND_COOLDOWN = 60;
 
-// ===== STEP 1: LOGIN & SEND OTP =====
+// ===== STEP 1: LOGIN & SEND OTP (updated) =====
 export const login2FA = async (req, res) => {
   const { email, password } = req.body;
 
@@ -45,7 +45,20 @@ export const login2FA = async (req, res) => {
       return res.status(200).json({ message: 'Login successful', token, user });
     }
 
-    // 2FA enabled → generate OTP
+    // Check for existing unexpired OTP
+    const existingOtpResult = await pool.query(
+      `SELECT * FROM otp_verifications 
+       WHERE user_id=$1 AND is_verified=FALSE AND expires_at>NOW() 
+       ORDER BY created_at DESC LIMIT 1`,
+      [user.id]
+    );
+
+    if (existingOtpResult.rows.length > 0) {
+      // OTP already exists → do not create a new one
+      return res.status(200).json({ message: 'OTP already sent to your email', userId: user.id });
+    }
+
+    // No active OTP → generate new OTP
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -105,15 +118,18 @@ export const verifyOTP = async (req, res) => {
   }
 };
 
-// ===== RESEND OTP =====
+// RESEND OTP
 export const resendOTP = async (req, res) => {
   const { userId } = req.body;
 
   if (!userId) return res.status(400).json({ error: "User ID is required" });
 
   try {
+    // Get the latest OTP for this user
     const lastOtpResult = await pool.query(
-      `SELECT * FROM otp_verifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1`,
+      `SELECT * FROM otp_verifications 
+       WHERE user_id=$1 
+       ORDER BY created_at DESC LIMIT 1`,
       [userId]
     );
 
@@ -121,13 +137,24 @@ export const resendOTP = async (req, res) => {
       return res.status(400).json({ error: "No previous OTP found" });
 
     const lastOtp = lastOtpResult.rows[0];
-    const secondsSinceLastOTP = (Date.now() - new Date(lastOtp.created_at).getTime()) / 1000;
+    const now = new Date();
+    const secondsSinceLastOTP = (now.getTime() - new Date(lastOtp.created_at).getTime()) / 1000;
 
-    if (secondsSinceLastOTP < OTP_RESEND_COOLDOWN)
-      return res.status(429).json({ error: `Please wait ${Math.ceil(OTP_RESEND_COOLDOWN - secondsSinceLastOTP)} seconds before requesting a new OTP` });
+    // If cooldown is not over → reject
+    if (secondsSinceLastOTP < OTP_RESEND_COOLDOWN) {
+      const waitTime = Math.ceil(OTP_RESEND_COOLDOWN - secondsSinceLastOTP);
+      return res.status(429).json({ error: `Please wait ${waitTime} seconds before requesting a new OTP` });
+    }
 
+    // If last OTP is still valid and unverified → reuse it
+    if (!lastOtp.is_verified && new Date(lastOtp.expires_at) > now) {
+      await sendOTPEmail(lastOtp.email, lastOtp.otp_code);
+      return res.status(200).json({ message: "OTP resent to your email" });
+    }
+
+    // Otherwise → generate a new OTP
     const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes
 
     await pool.query(
       'INSERT INTO otp_verifications (user_id, email, otp_code, expires_at, is_verified, created_at) VALUES ($1, $2, $3, $4, FALSE, NOW())',
@@ -137,6 +164,7 @@ export const resendOTP = async (req, res) => {
     await sendOTPEmail(lastOtp.email, otp);
 
     res.status(200).json({ message: "New OTP sent to email" });
+
   } catch (err) {
     console.error("resendOTP error:", err);
     res.status(500).json({ error: 'Server error' });
@@ -162,51 +190,62 @@ export const approveLandlord = async (req, res) => {
   }
 };
 
-// FORGOT PASSWORD
+// Generate reset token & send email
 export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
   try {
-    const userResult = await pool.query("SELECT id FROM users WHERE email=$1", [email.toLowerCase()]);
-    if (!userResult.rows.length) return res.status(404).json({ error: "Email not found" });
+    const { email } = req.body;
+
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    const userResult = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    if (userResult.rows.length === 0) return res.status(404).json({ error: "User not found" });
 
     const userId = userResult.rows[0].id;
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-
-    await pool.query(
-      "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)",
-      [userId, token, expiresAt]
-    );
+    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "30m" });
 
     await sendResetPasswordEmail(email, token);
 
-    res.status(200).json({ message: "Password reset email sent successfully" });
-  } catch (err) {
-    console.error("forgotPassword error:", err.message);
-    res.status(500).json({ error: "Server error: " + err.message });
+    return res.status(200).json({ message: "Reset email sent" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
-// RESET PASSWORD
+// Reset password with token
 export const resetPassword = async (req, res) => {
-  const { token } = req.params;
-  const { password } = req.body;
   try {
-    const tokenResult = await pool.query(
-      "SELECT user_id FROM password_reset_tokens WHERE token=$1 AND expires_at>NOW()",
-      [token]
-    );
-    if (!tokenResult.rows.length) return res.status(400).json({ error: "Invalid or expired token" });
+    const { password } = req.body;
+    const { token } = req.params; // get token from URL
 
-    const userId = tokenResult.rows[0].user_id;
-    const passwordHash = await bcrypt.hash(password, 10);
+    if (!token) return res.status(400).json({ error: "Reset token is required" });
+    if (!password) return res.status(400).json({ error: "Password is required" });
 
-    await pool.query("UPDATE users SET password_hash=$1 WHERE id=$2", [passwordHash, userId]);
-    await pool.query("DELETE FROM password_reset_tokens WHERE token=$1", [token]);
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        error:
+          "Password must be at least 8 characters and include uppercase, lowercase, and a number",
+      });
+    }
 
-    res.status(200).json({ message: "Password reset successful" });
-  } catch (err) {
-    console.error("resetPassword error:", err.message);
-    res.status(500).json({ error: "Server error: " + err.message });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
+      hashedPassword,
+      decoded.id,
+    ]);
+
+    return res.status(200).json({ message: "Password reset successful" });
+  } catch (error) {
+    console.error("Reset password error:", error.message);
+
+    if (error.name === "TokenExpiredError")
+      return res.status(400).json({ error: "Reset link has expired" });
+    if (error.name === "JsonWebTokenError")
+      return res.status(400).json({ error: "Invalid reset token" });
+
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
