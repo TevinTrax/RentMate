@@ -4,13 +4,13 @@ import { verifyToken, requireRole } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/admin",  createUserAdmin);
-router.post("/register", registerUser);
+router.post("/admin", requireRole("Admin"),  createUserAdmin);
+router.post("/register", requireRole("Admin"), registerUser);
 router.post("/landlord",createUserLandlord);
 router.post("/tenant",createUserTenant);
-router.get("/",verifyToken, requireRole("admin"), fetchUsers);
+router.get("/",verifyToken, requireRole("Admin"), fetchUsers);
 router.get("/profile", verifyToken, getProfile);
-router.put("/:id", verifyToken, requireRole("admin"), updateUser);
+router.put("/:id", verifyToken, requireRole("Admin"), updateUser);
 
 // GET pending tenants for logged-in landlord
 router.get("/landlord/pending-tenants", verifyToken, requireRole("Landlord"), getPendingTenants);
@@ -19,6 +19,6 @@ router.patch("/tenant/:tenantId/Tenant-Status", verifyToken, updateTenantApprova
 router.get("/tenant/approved", verifyToken, getApprovedTenant);
 
 // Delete user
-router.delete("/delete-users/:id", verifyToken, requireRole("admin"), deleteUser);
+router.delete("/delete-users/:id", verifyToken, requireRole("Admin"), deleteUser);
 
 export default router;

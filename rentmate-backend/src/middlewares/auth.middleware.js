@@ -24,7 +24,7 @@ export const verifyToken = (req, res, next) => {
     req.user = {
       id: decoded.id,
       email: decoded.email,
-      role: decoded.role,
+      role: decoded.role?.toLowerCase(), // normalize role
     };
 
     next();
@@ -42,7 +42,10 @@ export const requireRole = (...roles) => {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      if (!roles.includes(req.user.role)) {
+      // normalize allowed roles
+      const normalizedRoles = roles.map((role) => role.toLowerCase());
+
+      if (!normalizedRoles.includes(req.user.role.toLowerCase())) {
         return res.status(403).json({
           error: `Access denied. Allowed roles: ${roles.join(", ")}`,
         });

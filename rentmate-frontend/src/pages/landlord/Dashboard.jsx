@@ -320,6 +320,7 @@ function LandlordDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 border border-red-500 my-6 gap-4 p-4">
+                    {/* property owned overview analytics graph */}
                     <div className="border border-gray-400 p-4 rounded-lg shadow-md bg-gray-50">
                         <h3 className="text-gray-800 text-lg font-bold">Quick Actions</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -345,6 +346,8 @@ function LandlordDashboard() {
                             </div>
                         </div>                
                     </div>
+
+                    {/* payments analytic overview with graph including the payment methods used by tenants */}
                     <div className="border border-gray-400 p-4 rounded-lg shadow-md bg-gray-50">
                         <h3 className="text-gray-800 text-lg font-bold">Revenue Overview</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -370,6 +373,8 @@ function LandlordDashboard() {
                             </div>
                         </div>                
                     </div>
+
+                    {/* recent activity like tenant request and login and apartments added and apartments posted */}
                     <div className="border border-gray-400 p-4 rounded-lg shadow-md bg-gray-50">
                         <h3 className="text-gray-800 text-lg font-bold">Recent Transactions</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -395,6 +400,8 @@ function LandlordDashboard() {
                             </div>
                         </div>                
                     </div>
+
+                    {/* tenants in respective apartment owned overviw analytics */}
                     <div className="border border-gray-400 p-4 rounded-lg shadow-md bg-gray-50">
                         <h3 className="text-gray-800 text-lg font-bold">Recent Activity</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
