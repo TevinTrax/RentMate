@@ -4,8 +4,8 @@ import { verifyToken, requireRole } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/admin", requireRole("Admin"),  createUserAdmin);
-router.post("/register", requireRole("Admin"), registerUser);
+router.post("/admin",verifyToken, requireRole("Admin"),  createUserAdmin);
+router.post("/register",verifyToken, requireRole("Admin"), registerUser);
 router.post("/landlord",createUserLandlord);
 router.post("/tenant",createUserTenant);
 router.get("/",verifyToken, requireRole("Admin"), fetchUsers);

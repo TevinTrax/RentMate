@@ -8,7 +8,6 @@ import {
 } from "react-icons/fa6";
 
 function Pricing() {
-
   const plans = [
     {
       id: 1,
@@ -40,7 +39,7 @@ function Pricing() {
       description: "For medium-scale landlords",
       button: "Choose Standard",
       buttonStyle:
-        "w-full p-2 text-md text-white bg-green-500 hover:bg-green-600 border rounded-lg font-semibold",
+        "w-full p-2 text-white bg-green-500 hover:bg-green-600 border rounded-lg font-semibold",
       features: [
         { name: "Up to 20 Properties", included: true },
         { name: "Tenant Management", included: true },
@@ -63,7 +62,7 @@ function Pricing() {
       description: "For large property managers or agencies",
       button: "Go Premium",
       buttonStyle:
-        "w-full p-2 text-md text-gray-800 border rounded-lg font-semibold hover:text-white hover:bg-green-500",
+        "w-full p-2 text-gray-800 border rounded-lg font-semibold hover:text-white hover:bg-green-500",
       features: [
         { name: "Unlimited Properties", included: true },
         { name: "Tenant Management", included: true },
@@ -80,10 +79,9 @@ function Pricing() {
     },
   ];
 
-  // FINAL FIXED LOGIC
   const handleSelectPlan = (plan) => {
     try {
-      // Save CLEAN data (no React elements like icons)
+      // Save plan cleanly
       const cleanPlan = {
         id: plan.id,
         name: plan.name,
@@ -92,14 +90,13 @@ function Pricing() {
         features: plan.features,
         popular: plan.popular || false,
       };
-
       sessionStorage.setItem("selectedPlan", JSON.stringify(cleanPlan));
 
-      // Check login
+      // Check login token
       const token = sessionStorage.getItem("token");
 
       if (!token) {
-        // Save redirect path
+        // Save redirect for after login
         sessionStorage.setItem("redirectAfterLogin", "/checkout");
 
         // Go to login
@@ -107,9 +104,8 @@ function Pricing() {
         return;
       }
 
-      // If logged in → go checkout
+      // Already logged in → go to checkout
       window.location.href = "/checkout";
-
     } catch (error) {
       console.error("Error selecting plan:", error);
       alert("Unable to select plan. Please try again.");
@@ -118,7 +114,6 @@ function Pricing() {
 
   return (
     <section className="w-full bg-green-50 py-18">
-
       {/* HEADER */}
       <div className="container mx-auto text-center py-20 bg-gradient-to-br from-green-600 to-green-400 rounded-b-3xl shadow-sm">
         <div className="inline-flex bg-blue-100 px-4 py-1 mt-20 rounded-2xl mb-4">
@@ -147,7 +142,6 @@ function Pricing() {
                   : "border-gray-200 hover:shadow-lg"
               }`}
           >
-
             {/* MOST POPULAR BADGE */}
             {plan.popular && (
               <div className="absolute top-0 left-0 w-36 overflow-hidden">
@@ -174,9 +168,7 @@ function Pricing() {
             {/* PRICE */}
             <h3 className="text-3xl font-bold text-gray-900 mt-4">
               Ksh {plan.price.toLocaleString()}
-              <span className="text-md font-medium text-gray-500">
-                {" "} /month
-              </span>
+              <span className="text-md font-medium text-gray-500"> /month</span>
             </h3>
 
             {/* FEATURES */}
@@ -208,7 +200,6 @@ function Pricing() {
                 {plan.button}
               </button>
             </div>
-
           </div>
         ))}
       </div>

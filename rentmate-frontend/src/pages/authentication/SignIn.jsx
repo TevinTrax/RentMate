@@ -1,11 +1,22 @@
-import { FaUser, FaLock, FaEye, FaEyeSlash, FaArrowLeft } from "react-icons/fa";
+import {
+  FaUser,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+  FaArrowLeft,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import bgImage from "@/assets/images/sign.jpg";
+import bgImage from "../../assets/images/sign.jpg";
 
 function SignIn() {
   const navigate = useNavigate();
   const cooldownRef = useRef(null);
+
+  // =========================
+  // CONFIG
+  // =========================
+  const API_BASE = "http://localhost:5000/api/auth";
 
   // =========================
   // FORM STATE
@@ -37,11 +48,27 @@ function SignIn() {
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.id]: e.target.value });
 
-  const handleOTPChange = (e) => setOTP(e.target.value);
+  const handleOTPChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6); // only digits, max 6
+    setOTP(value);
+  };
 
   const togglePassword = () => setPasswordVisible((prev) => !prev);
 
+  /**
+   * Redirect logic:
+   * If user came from checkout flow -> go there
+   * Else go to role dashboard
+   */
   const navigateDashboard = (role) => {
+    const redirectAfterLogin = sessionStorage.getItem("redirectAfterLogin");
+
+    if (redirectAfterLogin) {
+      sessionStorage.removeItem("redirectAfterLogin");
+      navigate(redirectAfterLogin);
+      return;
+    }
+
     const normalizedRole = role?.toLowerCase();
 
     switch (normalizedRole) {
@@ -91,6 +118,22 @@ function SignIn() {
     }
   };
 
+  const saveUserSession = (data) => {
+    if (data?.token) sessionStorage.setItem("token", data.token);
+    if (data?.user?.role) sessionStorage.setItem("role", data.user.role);
+    if (data?.user?.approval_status)
+      sessionStorage.setItem("approval_status", data.user.approval_status);
+    if (data?.user?.id) sessionStorage.setItem("user_id", data.user.id);
+    if (typeof data?.user?.is_verified !== "undefined") {
+      sessionStorage.setItem(
+        "is_verified",
+        data.user.is_verified ? "true" : "false"
+      );
+    }
+    if (data?.user?.email) sessionStorage.setItem("email", data.user.email);
+    if (data?.user?.name) sessionStorage.setItem("name", data.user.name);
+  };
+
   useEffect(() => {
     return () => {
       if (cooldownRef.current) {
@@ -112,7 +155,7 @@ function SignIn() {
     setLoginInProgress(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -127,14 +170,11 @@ function SignIn() {
       const data = await res.json();
 
       if (!res.ok) {
-        setLoginInProgress(false);
-        return alert(data.error || "Login failed");
+        return alert(data.error || data.message || "Login failed");
       }
 
       /**
-       * IMPORTANT FIX:
-       * Don't rely on message.includes("otp")
-       * Instead use strong indicators
+       * OTP REQUIRED FLOW
        */
       if (data.requiresOTP === true || data.step === "otp" || data.userId) {
         setIsOTPStep(true);
@@ -142,26 +182,23 @@ function SignIn() {
         setOTP("");
         setOtpAttempts(0);
         startCooldown(60);
-        setLoginInProgress(false);
         return;
       }
 
-      // If backend returns direct login token
+      /**
+       * DIRECT LOGIN FLOW
+       */
       if (data.token && data.user) {
-        sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("role", data.user.role);
-        sessionStorage.setItem("approval_status", data.user.approval_status || "");
-        sessionStorage.setItem("user_id", data.user.id);
-
+        saveUserSession(data);
         navigateDashboard(data.user.role);
-      } else {
-        alert("Unexpected server response. Please try again.");
+        return;
       }
 
-      setLoginInProgress(false);
+      alert("Unexpected server response. Please try again.");
     } catch (err) {
-      setLoginInProgress(false);
       alert("Network error: " + err.message);
+    } finally {
+      setLoginInProgress(false);
     }
   };
 
@@ -175,6 +212,10 @@ function SignIn() {
       return alert("Please enter the OTP.");
     }
 
+    if (otp.length !== 6) {
+      return alert("OTP must be 6 digits.");
+    }
+
     if (otpAttempts >= 3) {
       return alert("Maximum OTP attempts reached. Please request a new OTP.");
     }
@@ -182,7 +223,7 @@ function SignIn() {
     setOtpVerifying(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/verify-otp", {
+      const res = await fetch(`${API_BASE}/verify-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -197,19 +238,12 @@ function SignIn() {
 
       if (!res.ok) {
         setOtpAttempts((prev) => prev + 1);
-        setOtpVerifying(false);
-        return alert(data.error || "OTP verification failed");
+        return alert(data.error || data.message || "OTP verification failed");
       }
 
       // Success
       setOtpAttempts(0);
-
-      sessionStorage.setItem("token", data.token);
-      sessionStorage.setItem("role", data.user.role);
-      sessionStorage.setItem("approval_status", data.user.approval_status || "");
-      sessionStorage.setItem("user_id", data.user.id);
-      sessionStorage.setItem("is_verified", data.user.is_verified ? "true" : "false");
-
+      saveUserSession(data);
       navigateDashboard(data.user.role);
     } catch (err) {
       alert("Network error: " + err.message);
@@ -227,7 +261,7 @@ function SignIn() {
     setResendingOTP(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/resend-otp", {
+      const res = await fetch(`${API_BASE}/resend-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -238,13 +272,11 @@ function SignIn() {
       const data = await res.json();
 
       if (!res.ok) {
-        setResendingOTP(false);
-
         if (res.status === 429) {
           return alert(data.error || "Please wait before resending OTP.");
         }
 
-        return alert(data.error || "Failed to resend OTP");
+        return alert(data.error || data.message || "Failed to resend OTP");
       }
 
       alert(data.message || "OTP resent successfully");
@@ -261,7 +293,6 @@ function SignIn() {
   return (
     <section className="w-full min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100 flex items-center justify-center px-4 py-8 mt-20">
       <div className="w-full max-w-6xl bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden grid lg:grid-cols-2 min-h-[700px] border border-green-100">
-        
         {/* LEFT SIDE IMAGE */}
         <div className="hidden lg:block relative">
           <img
@@ -276,7 +307,8 @@ function SignIn() {
                 Manage Rentals <br /> The Smart Way
               </h2>
               <p className="text-white/90 text-base leading-relaxed">
-                Track tenants, manage properties, automate payments, and simplify your rental business.
+                Track tenants, manage properties, automate payments, and
+                simplify your rental business.
               </p>
             </div>
           </div>
@@ -366,7 +398,7 @@ function SignIn() {
                     id="password"
                     type={passwordVisible ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="w-full p-3.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                    className="w-full p-3.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition pr-12"
                     required
                     value={formData.password}
                     onChange={handleChange}
@@ -374,7 +406,7 @@ function SignIn() {
                   <button
                     type="button"
                     onClick={togglePassword}
-                    className="absolute right-3 top-10 text-gray-500"
+                    className="absolute right-4 top-[46px] text-gray-500 hover:text-green-600"
                   >
                     {passwordVisible ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -400,6 +432,7 @@ function SignIn() {
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   placeholder="Enter 6-digit OTP"
                   value={otp}
                   onChange={handleOTPChange}

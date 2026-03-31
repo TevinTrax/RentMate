@@ -19,27 +19,6 @@ const generateOTP = () =>
 
 const normalizeEmail = (email = "") => email.trim().toLowerCase();
 
-const normalizePhone = (phone = "") => {
-  let cleaned = phone.replace(/\s+/g, "").replace(/-/g, "");
-
-  if (cleaned.startsWith("+254")) {
-    cleaned = "0" + cleaned.slice(4);
-  } else if (cleaned.startsWith("254")) {
-    cleaned = "0" + cleaned.slice(3);
-  }
-
-  return cleaned;
-};
-
-const isValidKenyanPhone = (phone) => {
-  const normalized = normalizePhone(phone);
-  return /^(07|01)\d{8}$/.test(normalized);
-};
-
-const isValidKenyanID = (id) => {
-  return /^[0-9]{7,8}$/.test(String(id).trim());
-};
-
 /**
  * Strong password for RentMate:
  * - at least 8 chars
@@ -69,140 +48,12 @@ const createToken = (user) => {
   );
 };
 
-/* REGISTER USER (ADMIN / TENANT / LANDLORD) */
-export const registerUser = async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const {
-      first_name,
-      last_name,
-      email,
-      phone_number,
-      alt_phone_number,
-      id_number,
-      password,
-      role,
-    } = req.body;
-
-    if (
-      !first_name ||
-      !last_name ||
-      !email ||
-      !phone_number ||
-      !id_number ||
-      !password ||
-      !role
-    ) {
-      return res.status(400).json({ error: "All required fields must be filled" });
-    }
-
-    const normalizedEmail = normalizeEmail(email);
-    const normalizedPhone = normalizePhone(phone_number);
-    const normalizedAltPhone = alt_phone_number
-      ? normalizePhone(alt_phone_number)
-      : null;
-
-    if (!["Admin", "Tenant", "Landlord"].includes(role)) {
-      return res.status(400).json({ error: "Invalid role selected" });
-    }
-
-    if (!isValidKenyanPhone(normalizedPhone)) {
-      return res.status(400).json({
-        error: "Invalid Kenyan phone number. Use 07XXXXXXXX or 01XXXXXXXX",
-      });
-    }
-
-    if (normalizedAltPhone && !isValidKenyanPhone(normalizedAltPhone)) {
-      return res.status(400).json({
-        error: "Invalid alternative Kenyan phone number",
-      });
-    }
-
-    if (!isValidKenyanID(id_number)) {
-      return res.status(400).json({
-        error: "Invalid Kenyan ID number. It should be 7 or 8 digits.",
-      });
-    }
-
-    if (!isStrongPassword(password)) {
-      return res.status(400).json({ error: passwordValidationMessage });
-    }
-
-    await client.query("BEGIN");
-
-    const existingUser = await client.query(
-      `SELECT id FROM users 
-       WHERE email = $1 OR phone_number = $2 OR id_number = $3`,
-      [normalizedEmail, normalizedPhone, id_number]
-    );
-
-    if (existingUser.rows.length > 0) {
-      await client.query("ROLLBACK");
-      return res.status(409).json({
-        error: "A user with this email, phone number, or ID already exists",
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-
-    const approvalStatus = role === "Admin" ? "approved" : "pending";
-
-    const insertedUser = await client.query(
-      `INSERT INTO users (
-        first_name,
-        last_name,
-        email,
-        phone_number,
-        alt_phone_number,
-        id_number,
-        password_hash,
-        role,
-        is_verified,
-        approval_status,
-        account_status,
-        is_2fa_enabled,
-        created_at,
-        updated_at
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,FALSE,$9,'active',TRUE,NOW(),NOW())
-      RETURNING id, first_name, last_name, email, role, is_verified, approval_status`,
-      [
-        first_name.trim(),
-        last_name.trim(),
-        normalizedEmail,
-        normalizedPhone,
-        normalizedAltPhone,
-        id_number.trim(),
-        hashedPassword,
-        role,
-        approvalStatus,
-      ]
-    );
-
-    await client.query("COMMIT");
-
-    return res.status(201).json({
-      message: "User registered successfully",
-      user: insertedUser.rows[0],
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("registerUser error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  } finally {
-    client.release();
-  }
-};
-
 /* STEP 1: LOGIN + SEND OTP */
 export const login2FA = async (req, res) => {
   const { role, email, password } = req.body;
 
   try {
-    // =========================
     // VALIDATION
-    // =========================
     if (!email || !password) {
       return res.status(400).json({
         error: "Email and password are required",
@@ -211,9 +62,7 @@ export const login2FA = async (req, res) => {
 
     const normalizedEmail = normalizeEmail(email);
 
-    // =========================
     // FETCH USER
-    // =========================
     const result = await pool.query(
       `SELECT 
          id,
@@ -237,27 +86,21 @@ export const login2FA = async (req, res) => {
 
     const user = result.rows[0];
 
-    // =========================
     // OPTIONAL ROLE CHECK
-    // =========================
     if (role && user.role?.toLowerCase() !== role.toLowerCase()) {
       return res.status(403).json({
         error: `This account is registered as ${user.role}, not ${role}`,
       });
     }
 
-    // =========================
     // ACCOUNT STATUS CHECK
-    // =========================
     if (user.account_status?.toLowerCase() === "suspended") {
       return res.status(403).json({
         error: "Your account has been suspended",
       });
     }
 
-    // =========================
     // PASSWORD CHECK
-    // =========================
     const validPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!validPassword) {
@@ -266,9 +109,7 @@ export const login2FA = async (req, res) => {
       });
     }
 
-    // =========================
     // IF 2FA DISABLED → LOGIN DIRECTLY
-    // =========================
     if (!user.is_2fa_enabled) {
       const token = createToken(user);
 
@@ -286,9 +127,7 @@ export const login2FA = async (req, res) => {
       });
     }
 
-    // =========================
     // CHECK IF ACTIVE OTP EXISTS
-    // =========================
     const existingOtpResult = await pool.query(
       `SELECT *
        FROM otp_verifications
@@ -301,9 +140,7 @@ export const login2FA = async (req, res) => {
       [user.id]
     );
 
-    // =========================
     // OTP ALREADY EXISTS → DO NOT CREATE NEW ONE
-    // =========================
     if (existingOtpResult.rows.length > 0) {
       return res.status(200).json({
         message: "OTP already sent to your email",
@@ -314,9 +151,7 @@ export const login2FA = async (req, res) => {
       });
     }
 
-    // =========================
     // GENERATE NEW OTP
-    // =========================
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 

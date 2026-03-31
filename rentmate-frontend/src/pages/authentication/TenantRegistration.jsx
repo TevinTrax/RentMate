@@ -30,6 +30,10 @@ function TenantRegistration() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [idError, setIdError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [altPhoneError, setAltPhoneError] = useState("");
+
   // =========================
   // FETCH APARTMENTS
   // =========================
@@ -108,24 +112,119 @@ function TenantRegistration() {
   };
 
   // =========================
+  // KENYAN VALIDATION HELPERS
+  // =========================
+
+  // Kenyan National ID: usually 7–8 digits
+  const validateKenyanID = (id) => {
+    return /^\d{7,8}$/.test(id);
+  };
+
+  // Convert phone to 2547XXXXXXXX or 2541XXXXXXXX
+  const normalizeKenyanPhone = (phone) => {
+    if (!phone) return "";
+
+    let cleaned = phone.replace(/\D/g, "");
+
+    if (cleaned.startsWith("0") && cleaned.length === 10) {
+      cleaned = "254" + cleaned.substring(1);
+    } else if (cleaned.startsWith("7") && cleaned.length === 9) {
+      cleaned = "254" + cleaned;
+    } else if (cleaned.startsWith("1") && cleaned.length === 9) {
+      cleaned = "254" + cleaned;
+    }
+
+    return cleaned;
+  };
+
+  const validateKenyanPhone = (phone) => {
+    return /^(254)(7\d{8}|1\d{8})$/.test(phone);
+  };
+
+  // =========================
   // HANDLE INPUT CHANGE
   // =========================
   const handleChange = (e) => {
     const { id, value } = e.target;
 
+    let processedValue = value;
+
+    // Kenyan ID: numbers only, max 8 digits
+    if (id === "id_number") {
+      processedValue = value.replace(/\D/g, "").slice(0, 8);
+      setIdError("");
+    }
+
+    // Kenyan phone numbers: allow digits only during typing
+    if (id === "phone_number" || id === "alt_phone_number") {
+      processedValue = value.replace(/[^\d+]/g, "");
+      if (id === "phone_number") setPhoneError("");
+      if (id === "alt_phone_number") setAltPhoneError("");
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [id]: value,
+      [id]: processedValue,
       ...(id === "apartment_id" ? { unit_id: "" } : {}),
     }));
 
     if (id === "password") {
-      setPasswordStrength(checkPasswordStrength(value));
+      setPasswordStrength(checkPasswordStrength(processedValue));
       setPasswordError("");
     }
 
     if (id === "confirmPassword") {
       setPasswordError("");
+    }
+  };
+
+  // =========================
+  // HANDLE BLUR VALIDATION
+  // =========================
+  const handleBlur = (e) => {
+    const { id, value } = e.target;
+
+    if (id === "id_number") {
+      if (value && !validateKenyanID(value)) {
+        setIdError("Kenyan ID number must be 7 or 8 digits");
+      } else {
+        setIdError("");
+      }
+    }
+
+    if (id === "phone_number") {
+      const normalized = normalizeKenyanPhone(value);
+
+      setFormData((prev) => ({
+        ...prev,
+        phone_number: normalized,
+      }));
+
+      if (normalized && !validateKenyanPhone(normalized)) {
+        setPhoneError("Enter a valid Kenyan phone number (e.g. 0712345678 or 254712345678)");
+      } else {
+        setPhoneError("");
+      }
+    }
+
+    if (id === "alt_phone_number") {
+      if (!value.trim()) {
+        setAltPhoneError("");
+        return;
+      }
+
+      const normalized = normalizeKenyanPhone(value);
+
+      setFormData((prev) => ({
+        ...prev,
+        alt_phone_number: normalized,
+      }));
+
+      if (normalized && !validateKenyanPhone(normalized)) {
+        setAltPhoneError("Enter a valid Kenyan alternative phone number");
+      } else {
+        setAltPhoneError("");
+      }
     }
   };
 
@@ -146,13 +245,47 @@ function TenantRegistration() {
       return;
     }
 
+    const normalizedPhone = normalizeKenyanPhone(formData.phone_number);
+    const normalizedAltPhone = formData.alt_phone_number
+      ? normalizeKenyanPhone(formData.alt_phone_number)
+      : "";
+
+    if (!validateKenyanID(formData.id_number)) {
+      setIdError("Kenyan ID number must be 7 or 8 digits");
+      return;
+    }
+
+    if (!validateKenyanPhone(normalizedPhone)) {
+      setPhoneError("Enter a valid Kenyan phone number");
+      return;
+    }
+
+    if (normalizedAltPhone && !validateKenyanPhone(normalizedAltPhone)) {
+      setAltPhoneError("Enter a valid Kenyan alternative phone number");
+      return;
+    }
+
     setPasswordError("");
+    setIdError("");
+    setPhoneError("");
+    setAltPhoneError("");
+
+    const payload = {
+      ...formData,
+      email: formData.email.trim().toLowerCase(),
+      id_number: formData.id_number.trim(),
+      phone_number: normalizedPhone,
+      alt_phone_number: normalizedAltPhone || "",
+      first_name: formData.first_name.trim(),
+      last_name: formData.last_name.trim(),
+      reference: formData.reference.trim(),
+    };
 
     try {
       const response = await fetch("http://localhost:5000/api/users/tenant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -279,13 +412,19 @@ function TenantRegistration() {
               <label htmlFor="id_number" className="block text-sm text-gray-700 mb-1">ID Number</label>
               <input
                 id="id_number"
-                type="number"
-                placeholder="Enter your ID number"
+                type="text"
+                inputMode="numeric"
+                placeholder="Enter your Kenyan ID number"
                 value={formData.id_number}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 required
+                maxLength={8}
                 className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
               />
+              {idError && (
+                <p className="text-red-500 text-sm mt-1">{idError}</p>
+              )}
             </div>
 
             {/* Phone Numbers */}
@@ -295,12 +434,16 @@ function TenantRegistration() {
                 <input
                   id="phone_number"
                   type="tel"
-                  placeholder="e.g. 0700000000"
+                  placeholder="e.g. 0712345678"
                   value={formData.phone_number}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
                   className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
+                {phoneError && (
+                  <p className="text-red-500 text-sm mt-1">{phoneError}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="alt_phone_number" className="block text-sm text-gray-700 mb-1">Alternative Phone</label>
@@ -310,8 +453,12 @@ function TenantRegistration() {
                   placeholder="Optional"
                   value={formData.alt_phone_number}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
+                {altPhoneError && (
+                  <p className="text-red-500 text-sm mt-1">{altPhoneError}</p>
+                )}
               </div>
             </div>
 

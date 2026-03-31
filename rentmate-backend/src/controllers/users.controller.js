@@ -8,6 +8,34 @@ dotenv.config();
 // Password validation regex: min 8 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special char
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
 
+// KENYAN VALIDATION HELPERS
+// Normalize email
+const normalizeEmail = (email) => email?.trim().toLowerCase();
+
+// Kenyan National ID validation (usually 7–8 digits)
+const isValidKenyanID = (id) => /^[0-9]{7,8}$/.test(String(id).trim());
+
+// Normalize Kenyan phone to 2547XXXXXXXX or 2541XXXXXXXX
+const normalizeKenyanPhone = (phone) => {
+  if (!phone) return null;
+
+  let cleaned = String(phone).replace(/\s+/g, "").replace(/-/g, "");
+
+  if (cleaned.startsWith("+254")) {
+    cleaned = cleaned.replace("+", "");
+  } else if (cleaned.startsWith("0")) {
+    cleaned = "254" + cleaned.slice(1);
+  }
+
+  return cleaned;
+};
+
+// Validate normalized Kenyan phone
+const isValidKenyanPhone = (phone) => {
+  const normalized = normalizeKenyanPhone(phone);
+  return /^(2547\d{8}|2541\d{8})$/.test(normalized);
+};
+
 export const registerUser = async (req, res) => {
   try {
     const {
@@ -21,9 +49,47 @@ export const registerUser = async (req, res) => {
       password
     } = req.body;
 
+    // Normalize values
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizeKenyanPhone(phone_number);
+    const normalizedAltPhone = alt_phone_number
+      ? normalizeKenyanPhone(alt_phone_number)
+      : null;
+    const normalizedID = id_number ? String(id_number).trim() : null;
+    const normalizedRole = role?.trim().toLowerCase();
+
     // Check required fields
     if (!first_name || !last_name || !email || !role || !password) {
       return res.status(400).json({ error: "All required fields must be filled" });
+    }
+
+    // Validate allowed roles
+    const allowedRoles = ["admin", "landlord", "tenant"];
+    if (!allowedRoles.includes(normalizedRole)) {
+      return res.status(400).json({
+        error: "Invalid role selected"
+      });
+    }
+
+    // Validate Kenyan ID if provided
+    if (normalizedID && !isValidKenyanID(normalizedID)) {
+      return res.status(400).json({
+        error: "Enter a valid Kenyan ID number (7 to 8 digits)"
+      });
+    }
+
+    // Validate primary Kenyan phone if provided
+    if (phone_number && !isValidKenyanPhone(phone_number)) {
+      return res.status(400).json({
+        error: "Enter a valid Kenyan phone number"
+      });
+    }
+
+    // Validate alternative Kenyan phone if provided
+    if (alt_phone_number && !isValidKenyanPhone(alt_phone_number)) {
+      return res.status(400).json({
+        error: "Enter a valid alternative Kenyan phone number"
+      });
     }
 
     // Validate password strength
@@ -33,14 +99,14 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    //Check duplicates
+    // Check duplicates
     const duplicateCheck = await pool.query(
       `
       SELECT email, id_number, phone_number
       FROM users
       WHERE email = $1 OR id_number = $2 OR phone_number = $3
       `,
-      [email.toLowerCase(), id_number, phone_number]
+      [normalizedEmail, normalizedID, normalizedPhone]
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -53,25 +119,42 @@ export const registerUser = async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    // Only admins are auto-approved
+    const approvalStatus = normalizedRole === "admin" ? "Approved" : "Pending";
+
+    // Optional: only landlords get trial subscription
+    const subscriptionStatus = normalizedRole === "landlord" ? "Trial" : null;
+
     // Insert user
     const result = await pool.query(
       `
       INSERT INTO users
-      (first_name, last_name, email, id_number, phone_number, alt_phone_number, role, subscription_status, password_hash, approval_status)
+      (
+        first_name,
+        last_name,
+        email,
+        id_number,
+        phone_number,
+        alt_phone_number,
+        role,
+        subscription_status,
+        password_hash,
+        approval_status
+      )
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       RETURNING id, first_name, last_name, email, role, approval_status
       `,
       [
-        first_name,
-        last_name,
-        email.toLowerCase(),
-        id_number,
-        phone_number,
-        alt_phone_number || null,
-        role,
-        "Trial",
+        first_name.trim(),
+        last_name.trim(),
+        normalizedEmail,
+        normalizedID,
+        normalizedPhone,
+        normalizedAltPhone || null,
+        normalizedRole.charAt(0).toUpperCase() + normalizedRole.slice(1),
+        subscriptionStatus,
         hashedPassword,
-        role.toLowerCase() === "landlord" ? "Pending" : "Approved"
+        approvalStatus
       ]
     );
 
@@ -99,9 +182,37 @@ export const createUserAdmin = async (req, res) => {
       password
     } = req.body;
 
+    // Normalize values
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizeKenyanPhone(phone_number);
+    const normalizedAltPhone = alt_phone_number
+      ? normalizeKenyanPhone(alt_phone_number)
+      : null;
+    const normalizedID = id_number ? String(id_number).trim() : null;
+
     /* Required fields validation */
     if (!first_name || !last_name || !email || !id_number || !phone_number || !password) {
       return res.status(400).json({ error: "All required fields must be filled" });
+    }
+
+    /* Kenyan ID validation */
+    if (!isValidKenyanID(normalizedID)) {
+      return res.status(400).json({
+        error: "Enter a valid Kenyan ID number (7 to 8 digits)"
+      });
+    }
+
+    /* Kenyan phone validation */
+    if (!isValidKenyanPhone(phone_number)) {
+      return res.status(400).json({
+        error: "Enter a valid Kenyan phone number"
+      });
+    }
+
+    if (alt_phone_number && !isValidKenyanPhone(alt_phone_number)) {
+      return res.status(400).json({
+        error: "Enter a valid alternative Kenyan phone number"
+      });
     }
 
     /*Password strength validation */
@@ -114,7 +225,7 @@ export const createUserAdmin = async (req, res) => {
     /*Duplicate check */
     const duplicateCheck = await pool.query(
       `SELECT email, id_number, phone_number FROM users WHERE email=$1 OR id_number=$2 OR phone_number=$3`,
-      [email.toLowerCase(), id_number, phone_number]
+      [normalizedEmail, normalizedID, normalizedPhone]
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -136,13 +247,13 @@ export const createUserAdmin = async (req, res) => {
       RETURNING id, first_name, last_name, email, role, approval_status
       `,
       [
-        first_name,
-        last_name,
+        first_name.trim(),
+        last_name.trim(),
         "Admin",
-        email.toLowerCase(),
-        phone_number,
-        alt_phone_number || null,
-        id_number,
+        normalizedEmail,
+        normalizedPhone,
+        normalizedAltPhone || null,
+        normalizedID,
         hashedPassword,
         "Approved" // Admins can be auto-approved
       ]
@@ -183,9 +294,37 @@ export const createUserLandlord = async (req, res) => {
       ref,
     } = req.body;
 
+    // Normalize values
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizeKenyanPhone(phone_number);
+    const normalizedAltPhone = alt_phone_number
+      ? normalizeKenyanPhone(alt_phone_number)
+      : null;
+    const normalizedID = id_number ? String(id_number).trim() : null;
+
     // Validate required fields
     if (!first_name || !last_name || !email || !phone_number || !password || !id_number) {
       return res.status(400).json({ error: "All required fields must be filled" });
+    }
+
+    // Kenyan ID validation
+    if (!isValidKenyanID(normalizedID)) {
+      return res.status(400).json({
+        error: "Enter a valid Kenyan ID number (7 to 8 digits)"
+      });
+    }
+
+    // Kenyan phone validation
+    if (!isValidKenyanPhone(phone_number)) {
+      return res.status(400).json({
+        error: "Enter a valid Kenyan phone number"
+      });
+    }
+
+    if (alt_phone_number && !isValidKenyanPhone(alt_phone_number)) {
+      return res.status(400).json({
+        error: "Enter a valid alternative Kenyan phone number"
+      });
     }
 
     // Password validation (enforce frontend rules)
@@ -198,9 +337,21 @@ export const createUserLandlord = async (req, res) => {
     }
 
     // Check if email already exists
-    const emailCheck = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    const emailCheck = await pool.query("SELECT id FROM users WHERE email = $1", [normalizedEmail]);
     if (emailCheck.rows.length > 0) {
       return res.status(409).json({ error: "Email already registered" });
+    }
+
+    // Check if ID already exists
+    const idCheck = await pool.query("SELECT id FROM users WHERE id_number = $1", [normalizedID]);
+    if (idCheck.rows.length > 0) {
+      return res.status(409).json({ error: "ID number already registered" });
+    }
+
+    // Check if phone already exists
+    const phoneCheck = await pool.query("SELECT id FROM users WHERE phone_number = $1", [normalizedPhone]);
+    if (phoneCheck.rows.length > 0) {
+      return res.status(409).json({ error: "Phone number already registered" });
     }
 
     // Hash password
@@ -220,13 +371,13 @@ export const createUserLandlord = async (req, res) => {
       RETURNING id, first_name, last_name, email, role, subscription_status, trial_end_date
       `,
       [
-        first_name,
-        last_name,
+        first_name.trim(),
+        last_name.trim(),
         "Landlord",
-        email,
-        phone_number,
-        alt_phone_number || null,
-        id_number,
+        normalizedEmail,
+        normalizedPhone,
+        normalizedAltPhone || null,
+        normalizedID,
         hashedPassword,
         ref || null,
         "Trial",
@@ -273,6 +424,14 @@ export const createUserTenant = async (req, res) => {
       reference,
     } = req.body;
 
+    // Normalize values
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizeKenyanPhone(phone_number);
+    const normalizedAltPhone = alt_phone_number
+      ? normalizeKenyanPhone(alt_phone_number)
+      : null;
+    const normalizedID = id_number ? String(id_number).trim() : null;
+
     // Validate required fields
     if (
       !first_name ||
@@ -290,9 +449,30 @@ export const createUserTenant = async (req, res) => {
       });
     }
 
-    // ===============================
+    // Kenyan ID validation
+    if (!isValidKenyanID(normalizedID)) {
+      return res.status(400).json({
+        success: false,
+        error: "Enter a valid Kenyan ID number (7 to 8 digits)",
+      });
+    }
+
+    // Kenyan phone validation
+    if (!isValidKenyanPhone(phone_number)) {
+      return res.status(400).json({
+        success: false,
+        error: "Enter a valid Kenyan phone number",
+      });
+    }
+
+    if (alt_phone_number && !isValidKenyanPhone(alt_phone_number)) {
+      return res.status(400).json({
+        success: false,
+        error: "Enter a valid alternative Kenyan phone number",
+      });
+    }
+
     // PASSWORD VALIDATION
-    // ===============================
     const validatePassword = (password) => {
       if (password.length < 8) return "Password must be at least 8 characters long";
       if (!/[A-Z]/.test(password)) return "Password must include at least one uppercase letter";
@@ -312,7 +492,7 @@ export const createUserTenant = async (req, res) => {
     // Check if email already exists
     const emailCheck = await client.query(
       "SELECT id FROM users WHERE LOWER(email) = LOWER($1)",
-      [email.trim()]
+      [normalizedEmail]
     );
 
     if (emailCheck.rows.length > 0) {
@@ -326,7 +506,7 @@ export const createUserTenant = async (req, res) => {
     // Check if ID number already exists
     const idCheck = await client.query(
       "SELECT id FROM users WHERE id_number = $1",
-      [id_number.trim()]
+      [normalizedID]
     );
 
     if (idCheck.rows.length > 0) {
@@ -340,7 +520,7 @@ export const createUserTenant = async (req, res) => {
     // Check if phone number already exists
     const phoneCheck = await client.query(
       "SELECT id FROM users WHERE phone_number = $1",
-      [phone_number.trim()]
+      [normalizedPhone]
     );
 
     if (phoneCheck.rows.length > 0) {
@@ -466,10 +646,10 @@ export const createUserTenant = async (req, res) => {
       [
         first_name.trim(),
         last_name.trim(),
-        email.trim().toLowerCase(),
-        phone_number.trim(),
-        alt_phone_number?.trim() || null,
-        id_number.trim(),
+        normalizedEmail,
+        normalizedPhone,
+        normalizedAltPhone || null,
+        normalizedID,
         hashedPassword,
         apartment_id,
         property.landlord_id,
@@ -802,17 +982,19 @@ export const updateTenantApprovalStatus = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const landlordId = req.user?.id;
+    const user = req.user; // logged-in user
     const { tenantId } = req.params;
     const { tenant_approval_status } = req.body;
 
-    if (!landlordId || req.user.role !== "Landlord") {
+    // Validate role
+    if (!user || !["landlord", "admin"].includes(user.role)) {
       return res.status(403).json({
         success: false,
         error: "Access denied",
       });
     }
 
+    // Validate tenant_approval_status
     if (!["approved", "rejected"].includes(tenant_approval_status)) {
       return res.status(400).json({
         success: false,
@@ -822,7 +1004,7 @@ export const updateTenantApprovalStatus = async (req, res) => {
 
     await client.query("BEGIN");
 
-    // Get tenant + confirm property belongs to landlord
+    // Fetch tenant + property info
     const tenantResult = await client.query(
       `
       SELECT 
@@ -832,7 +1014,7 @@ export const updateTenantApprovalStatus = async (req, res) => {
         u.tenant_approval_status,
         p.landlord_id
       FROM users u
-      JOIN properties p ON u.property_id = p.id
+      LEFT JOIN properties p ON u.property_id = p.id
       WHERE u.id = $1 AND u.role = 'Tenant'
       `,
       [tenantId]
@@ -840,15 +1022,13 @@ export const updateTenantApprovalStatus = async (req, res) => {
 
     if (tenantResult.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({
-        success: false,
-        error: "Tenant not found",
-      });
+      return res.status(404).json({ success: false, error: "Tenant not found" });
     }
 
     const tenant = tenantResult.rows[0];
 
-    if (tenant.landlord_id !== landlordId) {
+    //Landlord can only manage their own properties
+    if (user.role === "Landlord" && tenant.landlord_id !== user.id) {
       await client.query("ROLLBACK");
       return res.status(403).json({
         success: false,
@@ -856,7 +1036,7 @@ export const updateTenantApprovalStatus = async (req, res) => {
       });
     }
 
-    // Update tenant approval status
+    //Update tenant status
     const updatedTenantResult = await client.query(
       `
       UPDATE users
@@ -867,56 +1047,45 @@ export const updateTenantApprovalStatus = async (req, res) => {
       [tenant_approval_status, tenantId]
     );
 
-    // If approved, occupy unit and reduce vacant units
-    if (tenant_approval_status === "approved" && tenant.unit_id) {
-      // Check if unit is already occupied
-      const unitCheck = await client.query(
-        `SELECT is_occupied FROM units WHERE id = $1`,
-        [tenant.unit_id]
-      );
+    // Handle unit occupancy
+    if (tenant.unit_id) {
+      if (tenant_approval_status === "approved") {
+        // Check if unit already occupied
+        const unitCheck = await client.query(
+          `SELECT is_occupied FROM units WHERE id = $1`,
+          [tenant.unit_id]
+        );
+        if (unitCheck.rows.length > 0 && unitCheck.rows[0].is_occupied) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            error: "This unit is already occupied",
+          });
+        }
 
-      if (unitCheck.rows.length > 0 && unitCheck.rows[0].is_occupied) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({
-          success: false,
-          error: "This unit is already occupied",
-        });
+        // Mark unit as occupied
+        await client.query(
+          `UPDATE units SET is_occupied = true WHERE id = $1`,
+          [tenant.unit_id]
+        );
+
+        // Reduce vacant units in property
+        await client.query(
+          `UPDATE properties SET vacant_units = GREATEST(vacant_units - 1, 0), updated_at = NOW() WHERE id = $1`,
+          [tenant.property_id]
+        );
       }
 
-      await client.query(
-        `
-        UPDATE units
-        SET is_occupied = true
-        WHERE id = $1
-        `,
-        [tenant.unit_id]
-      );
-
-      await client.query(
-        `
-        UPDATE properties
-        SET 
-          vacant_units = GREATEST(vacant_units - 1, 0),
-          updated_at = NOW()
-        WHERE id = $1
-        `,
-        [tenant.property_id]
-      );
+      if (tenant_approval_status === "rejected") {
+        // Ensure unit is not occupied
+        await client.query(
+          `UPDATE units SET is_occupied = false WHERE id = $1`,
+          [tenant.unit_id]
+        );
+      }
     }
 
-    // If rejected, make sure unit stays vacant
-    if (tenant_approval_status === "rejected" && tenant.unit_id) {
-      await client.query(
-        `
-        UPDATE units
-        SET is_occupied = false
-        WHERE id = $1
-        `,
-        [tenant.unit_id]
-      );
-    }
-
-    // Fetch updated tenant with joins for frontend
+    // Fetch updated tenant info for frontend
     const finalTenant = await client.query(
       `
       SELECT

@@ -1,12 +1,13 @@
 // routes/auth.routes.js
 import express from "express";
-import { login2FA, verifyOTP, approveLandlord, forgotPassword, resetPassword} from "../controllers/auth.controller.js";
+import { login2FA, verifyOTP, approveLandlord, forgotPassword, resetPassword, resendOTP} from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
 // 2FA login flow
 router.post("/login", login2FA);       // Step 1: send OTP
 router.post("/verify-otp", verifyOTP); // Step 2: verify OTP & get token
+router.post("/resend-otp", resendOTP)
 
 // Admin/Landlord approval routes
 router.put("/approve-landlord/:id", approveLandlord);

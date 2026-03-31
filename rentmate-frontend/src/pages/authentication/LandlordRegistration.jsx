@@ -34,11 +34,22 @@ function LandlordRegistration() {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
 
+  const [fieldErrors, setFieldErrors] = useState({
+    id_number: "",
+    phone_number: "",
+    alt_phone_number: "",
+    email: "",
+  });
+
   useEffect(() => {
     if (role) setFormData((prev) => ({ ...prev, role }));
   }, [role]);
 
-  // Password rules (match backend: min 8, letters, numbers, special chars)
+  // =========================
+  // VALIDATION HELPERS
+  // =========================
+
+  // Match backend-style password rules
   const passwordRules = {
     minLength: formData.password.length >= 8,
     hasLetter: /[A-Za-z]/.test(formData.password),
@@ -47,19 +58,21 @@ function LandlordRegistration() {
   };
 
   const validatePassword = (password) => {
-    if (!passwordRules.minLength) return "Password must be at least 8 characters";
-    if (!passwordRules.hasLetter || !passwordRules.hasNumber || !passwordRules.hasSpecial) {
-      return "Password must include letters, numbers, and special characters";
+    if (password.length < 8) return "Password must be at least 8 characters";
+    if (!/[A-Za-z]/.test(password)) return "Password must include at least one letter";
+    if (!/\d/.test(password)) return "Password must include at least one number";
+    if (!/[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return "Password must include at least one special character";
     }
     return "";
   };
 
   const checkPasswordStrength = (password) => {
     let strength = 0;
-    if (passwordRules.minLength) strength++;
-    if (passwordRules.hasLetter) strength++;
-    if (passwordRules.hasNumber) strength++;
-    if (passwordRules.hasSpecial) strength++;
+    if (password.length >= 8) strength++;
+    if (/[A-Za-z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]/.test(password)) strength++;
 
     if (strength <= 1) return "Weak";
     if (strength === 2 || strength === 3) return "Medium";
@@ -74,31 +87,166 @@ function LandlordRegistration() {
     return "bg-gray-300";
   };
 
+  // Kenyan ID: 7–8 digits only
+  const validateKenyanID = (id) => {
+    const cleaned = id.trim();
+    if (!cleaned) return "ID number is required";
+    if (!/^\d{7,8}$/.test(cleaned)) {
+      return "Enter a valid Kenyan ID number (7–8 digits)";
+    }
+    return "";
+  };
+
+  // Kenyan phone validator
+  const validateKenyanPhone = (phone, isOptional = false) => {
+    const cleaned = phone.trim();
+
+    if (isOptional && !cleaned) return "";
+
+    if (!cleaned) return "Phone number is required";
+
+    const kenyaPhoneRegex =
+      /^(?:\+254|254|0)(?:7\d{8}|1\d{8})$/;
+
+    if (!kenyaPhoneRegex.test(cleaned)) {
+      return "Enter a valid Kenyan phone number";
+    }
+
+    return "";
+  };
+
+  const validateEmail = (email) => {
+    const cleaned = email.trim().toLowerCase();
+    if (!cleaned) return "Email is required";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleaned)) {
+      return "Enter a valid email address";
+    }
+
+    return "";
+  };
+
+  // Optional: normalize phone before sending to backend
+  const normalizePhone = (phone) => {
+    let cleaned = phone.trim().replace(/\s+/g, "");
+
+    if (cleaned.startsWith("+254")) {
+      cleaned = "0" + cleaned.slice(4);
+    } else if (cleaned.startsWith("254")) {
+      cleaned = "0" + cleaned.slice(3);
+    }
+
+    return cleaned;
+  };
+
+  // =========================
+  // HANDLE CHANGE
+  // =========================
   const handleChange = (e) => {
     const { id, value } = e.target;
 
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    let cleanedValue = value;
 
+    // Names: allow letters, spaces, hyphen, apostrophe
+    if (id === "first_name" || id === "last_name") {
+      cleanedValue = value.replace(/[^A-Za-z\s'-]/g, "");
+    }
+
+    // ID: digits only, max 8
+    if (id === "id_number") {
+      cleanedValue = value.replace(/\D/g, "").slice(0, 8);
+    }
+
+    // Phone numbers: allow digits and leading +
+    if (id === "phone_number" || id === "alt_phone_number") {
+      cleanedValue = value.replace(/[^\d+]/g, "").slice(0, 13);
+    }
+
+    // Email: trim spaces
+    if (id === "email") {
+      cleanedValue = value.trim();
+    }
+
+    setFormData((prev) => ({ ...prev, [id]: cleanedValue }));
+
+    // Live field validation
+    setFieldErrors((prev) => {
+      const updated = { ...prev };
+
+      if (id === "id_number") {
+        updated.id_number = cleanedValue ? validateKenyanID(cleanedValue) : "";
+      }
+
+      if (id === "phone_number") {
+        updated.phone_number = cleanedValue
+          ? validateKenyanPhone(cleanedValue)
+          : "";
+      }
+
+      if (id === "alt_phone_number") {
+        updated.alt_phone_number = cleanedValue
+          ? validateKenyanPhone(cleanedValue, true)
+          : "";
+      }
+
+      if (id === "email") {
+        updated.email = cleanedValue ? validateEmail(cleanedValue) : "";
+      }
+
+      return updated;
+    });
+
+    // Password validation
     if (id === "password") {
-      setPasswordStrength(checkPasswordStrength(value));
-      setPasswordError(validatePassword(value));
+      setPasswordStrength(checkPasswordStrength(cleanedValue));
+      setPasswordError(validatePassword(cleanedValue));
     }
 
     if (id === "confirmPassword") {
-      if (formData.password && value !== formData.password) {
+      if (formData.password && cleanedValue !== formData.password) {
         setPasswordError("Passwords do not match!");
       } else {
         setPasswordError(validatePassword(formData.password));
       }
     }
+
+    if (id === "password" && formData.confirmPassword) {
+      if (formData.confirmPassword !== cleanedValue) {
+        setPasswordError("Passwords do not match!");
+      } else {
+        setPasswordError(validatePassword(cleanedValue));
+      }
+    }
   };
 
+  // =========================
+  // HANDLE SUBMIT
+  // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const error = validatePassword(formData.password);
-    if (error) {
-      setPasswordError(error);
+    const emailError = validateEmail(formData.email);
+    const idError = validateKenyanID(formData.id_number);
+    const phoneError = validateKenyanPhone(formData.phone_number);
+    const altPhoneError = validateKenyanPhone(formData.alt_phone_number, true);
+    const passError = validatePassword(formData.password);
+
+    const newFieldErrors = {
+      email: emailError,
+      id_number: idError,
+      phone_number: phoneError,
+      alt_phone_number: altPhoneError,
+    };
+
+    setFieldErrors(newFieldErrors);
+
+    if (emailError || idError || phoneError || altPhoneError) {
+      return;
+    }
+
+    if (passError) {
+      setPasswordError(passError);
       return;
     }
 
@@ -112,13 +260,31 @@ function LandlordRegistration() {
     setLoading(true);
 
     try {
+      const payload = {
+        ...formData,
+        email: formData.email.trim().toLowerCase(),
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        id_number: formData.id_number.trim(),
+        phone_number: normalizePhone(formData.phone_number),
+        alt_phone_number: formData.alt_phone_number
+          ? normalizePhone(formData.alt_phone_number)
+          : "",
+        ref: formData.ref.trim(),
+      };
+
       const response = await fetch("http://localhost:5000/api/users/landlord", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type");
+      const data =
+        contentType && contentType.includes("application/json")
+          ? await response.json()
+          : { error: "Unexpected server response" };
+
       setLoading(false);
 
       if (response.ok) {
@@ -219,6 +385,9 @@ function LandlordRegistration() {
                 required
                 className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
               />
+              {fieldErrors.email && (
+                <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+              )}
             </div>
 
             {/* ID Number */}
@@ -227,12 +396,18 @@ function LandlordRegistration() {
               <input
                 id="id_number"
                 type="text"
+                inputMode="numeric"
                 value={formData.id_number}
                 onChange={handleChange}
-                placeholder="Enter your ID"
+                placeholder="e.g. 34567890"
                 required
+                maxLength={8}
                 className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
               />
+              <p className="text-xs text-gray-500 mt-1">Kenyan National ID (7–8 digits)</p>
+              {fieldErrors.id_number && (
+                <p className="text-red-500 text-sm mt-1">{fieldErrors.id_number}</p>
+              )}
             </div>
 
             {/* Phone Numbers */}
@@ -242,23 +417,33 @@ function LandlordRegistration() {
                 <input
                   id="phone_number"
                   type="tel"
+                  inputMode="tel"
                   value={formData.phone_number}
                   onChange={handleChange}
-                  placeholder="0700000000"
+                  placeholder="07XXXXXXXX / 01XXXXXXXX"
                   required
                   className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
                 />
+                <p className="text-xs text-gray-500 mt-1">Accepted: 07..., 01..., +254..., 254...</p>
+                {fieldErrors.phone_number && (
+                  <p className="text-red-500 text-sm mt-1">{fieldErrors.phone_number}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="alt_phone_number" className="block text-sm text-gray-700 mb-1">Alternative Phone</label>
                 <input
                   id="alt_phone_number"
                   type="tel"
+                  inputMode="tel"
                   value={formData.alt_phone_number}
                   onChange={handleChange}
-                  placeholder="0700000000"
+                  placeholder="Optional"
                   className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
                 />
+                <p className="text-xs text-gray-500 mt-1">Optional Kenyan number</p>
+                {fieldErrors.alt_phone_number && (
+                  <p className="text-red-500 text-sm mt-1">{fieldErrors.alt_phone_number}</p>
+                )}
               </div>
             </div>
 
