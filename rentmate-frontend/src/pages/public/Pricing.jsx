@@ -10,7 +10,7 @@ import {
 function Pricing() {
   const plans = [
     {
-      id: 1,
+      code: "basic",
       name: "Basic",
       icon: <FaBuildingColumns size={24} className="text-green-500" />,
       price: 3500,
@@ -31,7 +31,7 @@ function Pricing() {
       ],
     },
     {
-      id: 2,
+      code: "standard",
       name: "Standard",
       popular: true,
       icon: <FaUsers size={24} className="text-green-500" />,
@@ -55,7 +55,7 @@ function Pricing() {
       ],
     },
     {
-      id: 3,
+      code: "premium",
       name: "Premium",
       icon: <FaArrowTrendUp size={24} className="text-green-500" />,
       price: 9500,
@@ -81,30 +81,25 @@ function Pricing() {
 
   const handleSelectPlan = (plan) => {
     try {
-      // Save plan cleanly
       const cleanPlan = {
-        id: plan.id,
+        code: plan.code,
         name: plan.name,
         price: plan.price,
         description: plan.description,
         features: plan.features,
         popular: plan.popular || false,
       };
+
       sessionStorage.setItem("selectedPlan", JSON.stringify(cleanPlan));
 
-      // Check login token
       const token = sessionStorage.getItem("token");
 
       if (!token) {
-        // Save redirect for after login
         sessionStorage.setItem("redirectAfterLogin", "/checkout");
-
-        // Go to login
         window.location.href = "/sign-in";
         return;
       }
 
-      // Already logged in → go to checkout
       window.location.href = "/checkout";
     } catch (error) {
       console.error("Error selecting plan:", error);
@@ -134,7 +129,7 @@ function Pricing() {
       <div className="container mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 px-6 mb-10">
         {plans.map((plan) => (
           <div
-            key={plan.id}
+            key={plan.code}
             className={`relative border rounded-2xl shadow-md p-6 transition-transform duration-300 ease-in-out
               ${
                 plan.popular
@@ -142,7 +137,6 @@ function Pricing() {
                   : "border-gray-200 hover:shadow-lg"
               }`}
           >
-            {/* MOST POPULAR BADGE */}
             {plan.popular && (
               <div className="absolute top-0 left-0 w-36 overflow-hidden">
                 <div className="rotate-45 bg-green-600 text-white text-xs font-bold px-6 py-1 shadow-lg">
@@ -151,27 +145,19 @@ function Pricing() {
               </div>
             )}
 
-            {/* ICON */}
             <div className="w-fit bg-green-100 p-4 rounded-lg mb-2">
               {plan.icon}
             </div>
 
-            {/* TITLE */}
-            <h2 className="text-2xl font-semibold text-gray-800">
-              {plan.name}
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-800">{plan.name}</h2>
 
-            <p className="text-md text-gray-500 mt-2">
-              {plan.description}
-            </p>
+            <p className="text-md text-gray-500 mt-2">{plan.description}</p>
 
-            {/* PRICE */}
             <h3 className="text-3xl font-bold text-gray-900 mt-4">
               Ksh {plan.price.toLocaleString()}
               <span className="text-md font-medium text-gray-500"> /month</span>
             </h3>
 
-            {/* FEATURES */}
             <ul className="space-y-3 mt-6 text-left">
               {plan.features.map((f, i) => (
                 <li
@@ -190,7 +176,6 @@ function Pricing() {
               ))}
             </ul>
 
-            {/* BUTTON */}
             <div className="mt-6">
               <button
                 type="button"

@@ -5,9 +5,119 @@ import {
   FaMapMarkerAlt,
   FaClock,
   FaHeadset,
+  FaCheckCircle,
+  FaExclamationCircle,
 } from "react-icons/fa";
+import { useState } from "react";
 
 function Contact() {
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState({
+    type: "",
+    message: "",
+  });
+
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (feedback.message) {
+      setFeedback({ type: "", message: "" });
+    }
+  };
+
+  const validateForm = () => {
+    const { first_name, last_name, email, subject, message } = formData;
+
+    if (!first_name.trim()) return "First name is required.";
+    if (!last_name.trim()) return "Last name is required.";
+    if (!email.trim()) return "Email address is required.";
+    if (!subject.trim()) return "Subject is required.";
+    if (!message.trim()) return "Message is required.";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return "Please enter a valid email address.";
+
+    return null;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const validationError = validateForm();
+    if (validationError) {
+      setFeedback({
+        type: "error",
+        message: validationError,
+      });
+      return;
+    }
+
+    setLoading(true);
+    setFeedback({ type: "", message: "" });
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          source_page: "contact_page",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to send message.");
+      }
+
+      setFeedback({
+        type: "success",
+        message:
+          "Your message has been sent successfully. Our team will get back to you soon.",
+      });
+
+      setFormData({
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error("Contact form error:", error);
+
+      setFeedback({
+        type: "error",
+        message:
+          error.message ||
+          "Something went wrong while sending your message. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section
       id="contact"
@@ -48,7 +158,29 @@ function Contact() {
               </p>
             </div>
 
-            <form className="space-y-5">
+            {/* Feedback */}
+            {feedback.message && (
+              <div
+                className={`mb-6 flex items-start gap-3 rounded-2xl px-4 py-3 border ${
+                  feedback.type === "success"
+                    ? "bg-green-50 border-green-200 text-green-700"
+                    : "bg-red-50 border-red-200 text-red-700"
+                }`}
+              >
+                <div className="mt-0.5">
+                  {feedback.type === "success" ? (
+                    <FaCheckCircle size={18} />
+                  ) : (
+                    <FaExclamationCircle size={18} />
+                  )}
+                </div>
+                <p className="text-sm md:text-base font-medium">
+                  {feedback.message}
+                </p>
+              </div>
+            )}
+
+            <form className="space-y-5" onSubmit={handleSubmit}>
               {/* First + Last Name */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -57,6 +189,9 @@ function Contact() {
                   </label>
                   <input
                     type="text"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleChange}
                     placeholder="Enter your first name"
                     className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                     required
@@ -69,6 +204,9 @@ function Contact() {
                   </label>
                   <input
                     type="text"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
                     placeholder="Enter your last name"
                     className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                     required
@@ -83,9 +221,27 @@ function Contact() {
                 </label>
                 <input
                   type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="Enter your email"
                   className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                   required
+                />
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-sm md:text-base font-medium text-gray-800 mb-2">
+                  Phone Number <span className="text-gray-400">(Optional)</span>
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="Enter your phone number"
+                  className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                 />
               </div>
 
@@ -96,6 +252,9 @@ function Contact() {
                 </label>
                 <input
                   type="text"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
                   placeholder="How can we help you?"
                   className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                   required
@@ -108,6 +267,9 @@ function Contact() {
                   Message
                 </label>
                 <textarea
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
                   placeholder="Tell us more about your inquiry..."
                   rows={6}
                   className="w-full text-sm rounded-2xl px-4 py-3 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition resize-none"
@@ -118,10 +280,11 @@ function Contact() {
               {/* Button */}
               <button
                 type="submit"
-                className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl text-sm md:text-base font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                disabled={loading}
+                className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed text-white px-8 py-3 rounded-2xl text-sm md:text-base font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
               >
                 <FaPaperPlane size={15} />
-                Send Message
+                {loading ? "Sending..." : "Send Message"}
               </button>
             </form>
           </div>

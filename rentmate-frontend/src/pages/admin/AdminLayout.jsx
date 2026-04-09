@@ -93,6 +93,11 @@ function AdminLayout() {
             Properties
           </NavLink>
 
+          <NavLink to="/admin/plans" className={navLinkClass}>
+            <Building2 size={18} />
+            Plans
+          </NavLink>
+
           <NavLink to="/admin/payments" className={navLinkClass}>
             <CreditCard size={18} />
             Payments

@@ -1,6 +1,6 @@
 import { Building2 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { Home, CreditCard, FileText, Wrench, Bell, MessageSquare, LifeBuoy } from "lucide-react";
+import { Home, CreditCard, FileText, Wrench, Bell, MessageSquare, LifeBuoy, Settings } from "lucide-react";
 import { Outlet } from "react-router-dom";
 import TenantNavbar from "./TenantNavbar";
 import { useNavigate } from "react-router-dom";
@@ -70,6 +70,11 @@ function TenantLayout() {
                         <NavLink className={NavLinkClass} to="/tenant/messages">
                         <MessageSquare size={20} />
                         Messages
+                        </NavLink>
+
+                        <NavLink className={NavLinkClass} to="/tenant/settings">
+                                <Settings size={20} />
+                                Settings
                         </NavLink>
                     </nav>
 

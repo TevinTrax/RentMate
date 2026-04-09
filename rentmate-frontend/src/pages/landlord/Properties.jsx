@@ -428,62 +428,66 @@ function LandlordProperties() {
         }));
     };
 
-         // Handle form submit
-        const handlePostPropertySubmit = async (e) => {
-            e.preventDefault();
+    // Handle form submit
+    const handlePostPropertySubmit = async (e) => {
+        e.preventDefault();
 
-            try {
-                const formData = new FormData();
-                const submitData = { ...postFormData };
+        try {
+            const formData = new FormData();
+            const submitData = { ...postFormData };
 
-                // update lat/lng from live location
-                if (location) {
-                    submitData.latitude = location.latitude;
-                    submitData.longitude = location.longitude;
-                }
+            // update lat/lng from live location
+            if (location) {
+                submitData.latitude = location.latitude;
+                submitData.longitude = location.longitude;
+            }
 
-                Object.keys(submitData).forEach((key) => {
+            Object.keys(submitData).forEach((key) => {
                 let value = submitData[key];
                 if (value !== null && value !== undefined) {
                     if (typeof value === "boolean") value = value ? "1" : "0";
                     formData.append(key, value);
                 }
-                });
+            });
 
-                const token= sessionStorage.getItem("token");
+            const token = sessionStorage.getItem("token");
 
-                const response = await fetch("http://localhost:5000/api/properties/post-property", {
-                    method: "POST",
-                    body: formData,
-                    headers: {
-                        "Authorization": `Bearer ${token}`
-                    }
-                });
-
-                // Safely parse JSON
-                let data;
-                try {
-                    data = await response.json();
-                } catch (err) {
-                    throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
+            const response = await fetch("http://localhost:5000/api/properties/post-property", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    Authorization: `Bearer ${token}`
                 }
+            });
 
-                if (!response.ok) {
-                    throw new Error(data.error || "Failed to post property");
-                }
+            let data;
+            try {
+                data = await response.json();
+            } catch (err) {
+                throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
+            }
 
-                console.log("Property posted successfully:", data);
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to post property");
+            }
 
-                // Close modal and reset only necessary fields
-                setOpenPostPropertyModal(false);
+            console.log("Property posted successfully:", data);
 
-                // Reset the fields you want to clear while keeping FormData reference
-                setPostFormData((prev) => ({
-                ...prev,
+            // refresh posted property list immediately
+            await fetchPostedProperties();
+
+            // success message
+            alert("Property posted successfully!");
+
+            // close modal
+            setOpenPostPropertyModal(false);
+
+            // reset form
+            setPostFormData({
                 apartment_name: "",
                 property_type: "",
                 property_status: "",
-                vacant_units:"",
+                vacant_units: "",
                 description: "",
                 manager_first_name: "",
                 manager_last_name: "",
@@ -515,14 +519,13 @@ function LandlordProperties() {
                 rent_due_day: 1,
                 rent_due_type: "ON_OR_BEFORE",
                 rent_cycle: "MONTHLY",
-                }));
+            });
 
-            } catch (error) {
-                console.error("Error posting property:", error);
-                alert(error.message);
-            }
-        };
-
+        } catch (error) {
+            console.error("Error posting property:", error);
+            alert(error.message);
+        }
+    };
 
        // state for posted properties
         const [postedProperties, setPostedProperties] = useState([]);
@@ -567,6 +570,54 @@ function LandlordProperties() {
         }, []);
 
 
+    // dashboard stats state
+    const [dashboardStats, setDashboardStats] = useState({
+        totalProperties: 0,
+        occupiedUnits: 0,
+        vacantUnits: 0,
+        pendingApproval: 0,
+    });
+
+    // calculate dashboard stats
+    const calculateDashboardStats = (propertyList) => {
+        let totalProperties = 0;
+        let occupiedUnits = 0;
+        let vacantUnits = 0;
+        let pendingApproval = 0;
+
+        totalProperties = propertyList.length;
+
+        propertyList.forEach((property) => {
+            const totalUnits = Number(property.total_units) || 0;
+            const vacant = Number(property.vacant_units) || 0;
+
+            vacantUnits += vacant;
+            occupiedUnits += Math.max(totalUnits - vacant, 0);
+
+            if (
+                property.approval_status === "pending" ||
+                property.status === "pending" ||
+                property.property_status === "pending"
+            ) {
+                pendingApproval += 1;
+            }
+        });
+
+        setDashboardStats({
+            totalProperties,
+            occupiedUnits,
+            vacantUnits,
+            pendingApproval,
+        });
+    };
+
+    // update filtered properties + stats whenever properties change
+    useEffect(() => {
+        setFilteredProperties(properties);
+        calculateDashboardStats(properties);
+    }, [properties]);
+
+
   return (
     <section className="w-full">
         <div className="pt-20">
@@ -604,34 +655,57 @@ function LandlordProperties() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 p-6">
+                {/* Total Properties */}
                 <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
-                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center"><Building2 size={28} className="text-blue-900"/></div>
+                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <Building2 size={28} className="text-blue-900" />
+                    </div>
                     <div>
                         <h2 className="text-md font-semibold text-gray-800">Total Properties</h2>
-                        <p className="text-2xl font-bold text-gray-800">{properties.length}</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                            {dashboardStats.totalProperties}
+                        </p>
                     </div>
                 </div>
+
+                {/* Occupied Units */}
                 <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
-                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center"><Verified size={28} className="text-blue-500"/></div>
+                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <Verified size={28} className="text-blue-500" />
+                    </div>
                     <div>
-                    <h2 className="text-md font-semibold text-gray-800">Occupied Units</h2>
-                    <p className="text-2xl font-bold text-gray-800">200</p>
+                        <h2 className="text-md font-semibold text-gray-800">Occupied Units</h2>
+                        <p className="text-2xl font-bold text-gray-800">
+                            {dashboardStats.occupiedUnits}
+                        </p>
                     </div>
                 </div>
-            <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
-                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center"><DoorOpen size={28} className="text-green-500"/></div>
-                <div>
-                <h2 className="text-md font-semibold text-gray-800">Vacant Units</h2>
-                <p className="text-2xl font-bold text-gray-800">25</p>
+
+                {/* Vacant Units */}
+                <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
+                    <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                        <DoorOpen size={28} className="text-green-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-md font-semibold text-gray-800">Vacant Units</h2>
+                        <p className="text-2xl font-bold text-gray-800">
+                            {dashboardStats.vacantUnits}
+                        </p>
+                    </div>
                 </div>
-            </div>
-            <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
-                <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center"><Clock size={28} className="text-yellow-500"/></div>
-                <div>
-                <h2 className="text-md font-semibold text-gray-800">Pending Approval</h2>
-                <p className="text-2xl font-bold text-gray-800">25</p>
+
+                {/* Pending Approval */}
+                <div className="flex p-4 gap-4 rounded-lg border border-gray-300 bg-gray-100 transition hover:scale-105 shadow">
+                    <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
+                        <Clock size={28} className="text-yellow-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-md font-semibold text-gray-800">Pending Approval</h2>
+                        <p className="text-2xl font-bold text-gray-800">
+                            {dashboardStats.pendingApproval}
+                        </p>
+                    </div>
                 </div>
-            </div>
             </div>
 
             {/* Properties Grid */}
@@ -1104,6 +1178,12 @@ function LandlordProperties() {
             </div>
         </div>
         )}
+
+
+
+
+
+
 
             {/* Add Property Modal */}
             {showAddProperty &&(
@@ -1724,8 +1804,9 @@ function LandlordProperties() {
                                                     <input
                                                         type="number"
                                                         id="vacant_units"
+                                                        name="vacant_units"
                                                         value={postFormData.vacant_units}
-                                                        onChange={handleChange}
+                                                        onChange={handleInputChange}
                                                         placeholder="Number of vacant units"
                                                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                                     />

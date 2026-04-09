@@ -14,7 +14,6 @@ import {
   Activity,
   CheckCircle2,
   XCircle,
-  CalendarDays,
   ArrowRight,
   RefreshCw,
   BadgeDollarSign,
@@ -22,6 +21,11 @@ import {
   CircleDollarSign,
   HousePlus,
   ClipboardList,
+  Wifi,
+  WifiOff,
+  Sparkles,
+  BarChart3,
+  LayoutDashboard,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
@@ -78,6 +82,8 @@ function LandlordDashboard() {
     occupancyRate: 0,
     activeLeases: 0,
     vacantUnits: 0,
+    occupiedUnits: 0,
+    totalUnits: 0,
     expiringSoon: 0,
     leaseTrend: 0,
     occupancyTrend: 0,
@@ -90,10 +96,18 @@ function LandlordDashboard() {
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
 
-  // -------------------------------
-  // Helpers
-  // -------------------------------
+  const getUserFromToken = (token) => {
+    try {
+      return JSON.parse(atob(token.split(".")[1]));
+    } catch {
+      return null;
+    }
+  };
+
+  const currentUser = useMemo(() => getUserFromToken(token), [token]);
+
   const authHeaders = useMemo(() => {
     return {
       Authorization: `Bearer ${token}`,
@@ -114,9 +128,6 @@ function LandlordDashboard() {
 
   const safeArray = (arr) => (Array.isArray(arr) ? arr : []);
 
-  // -------------------------------
-  // Fetch Functions
-  // -------------------------------
   const fetchProperties = useCallback(async () => {
     try {
       setLoadingProperties(true);
@@ -148,7 +159,9 @@ function LandlordDashboard() {
 
       const data = await res.json();
       if (res.ok) {
-        setApprovalStatus(data.approval_status || null);
+        setApprovalStatus(
+          String(data.approval_status || "").toLowerCase()
+        );
       }
     } catch (error) {
       console.error("Profile fetch error:", error);
@@ -220,11 +233,15 @@ function LandlordDashboard() {
     }
   }, [authHeaders]);
 
+  // IMPORTANT: This should now hit unit-based occupancy endpoint
   const fetchLeaseOverview = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/leases/landlord/overview`, {
-        headers: authHeaders,
-      });
+      const res = await fetch(
+        `${API_BASE}/api/users/landlord/occupancy-overview`,
+        {
+          headers: authHeaders,
+        }
+      );
 
       const data = await res.json();
 
@@ -233,6 +250,8 @@ function LandlordDashboard() {
           occupancyRate: Number(data.occupancyRate) || 0,
           activeLeases: Number(data.activeLeases) || 0,
           vacantUnits: Number(data.vacantUnits) || 0,
+          occupiedUnits: Number(data.occupiedUnits) || 0,
+          totalUnits: Number(data.totalUnits) || 0,
           expiringSoon: Number(data.expiringSoon) || 0,
           leaseTrend: Number(data.leaseTrend) || 0,
           occupancyTrend: Number(data.occupancyTrend) || 0,
@@ -242,7 +261,7 @@ function LandlordDashboard() {
         });
       }
     } catch (error) {
-      console.error("Lease overview fetch error:", error);
+      console.error("Occupancy overview fetch error:", error);
     }
   }, [authHeaders]);
 
@@ -316,41 +335,40 @@ function LandlordDashboard() {
     ]
   );
 
-  // -------------------------------
-  // Initial Load
-  // -------------------------------
   useEffect(() => {
     if (!token) return;
     refreshDashboard();
   }, [token, refreshDashboard]);
 
-  // -------------------------------
-  // WebSocket Live Updates
-  // -------------------------------
   useEffect(() => {
-    if (!token) return;
+    if (!token || !currentUser?.id) return;
 
     const socket = io(SOCKET_URL, {
       transports: ["websocket"],
-      auth: {
-        token,
-      },
+      auth: { token },
     });
 
     socket.on("connect", () => {
+      setSocketConnected(true);
       console.log("Connected to dashboard socket:", socket.id);
-      socket.emit("join_landlord_dashboard");
+
+      socket.emit("join_landlord_dashboard", {
+        landlordId: currentUser.id,
+      });
     });
 
-    socket.on("property_created", (payload) => {
-      console.log("property_created", payload);
+    socket.on("disconnect", () => {
+      setSocketConnected(false);
+      console.log("Socket disconnected");
+    });
+
+    socket.on("property_created", () => {
       fetchProperties();
       fetchRecentActivity();
+      fetchLeaseOverview();
     });
 
     socket.on("property_updated", (updatedProperty) => {
-      console.log("property_updated", updatedProperty);
-
       setProperties((prev) =>
         prev.map((property) =>
           property.id === updatedProperty.id ? updatedProperty : property
@@ -362,15 +380,27 @@ function LandlordDashboard() {
     });
 
     socket.on("property_deleted", ({ propertyId }) => {
-      console.log("property_deleted", propertyId);
-
       setProperties((prev) => prev.filter((p) => p.id !== propertyId));
       fetchLeaseOverview();
       fetchRecentActivity();
     });
 
+    socket.on("tenant_request_created", () => {
+      fetchLandlordTenants();
+      fetchRecentActivity();
+      fetchNotifications();
+    });
+
     socket.on("tenant_updated", () => {
       fetchLandlordTenants();
+      fetchRecentActivity();
+      fetchLeaseOverview();
+      fetchNotifications();
+    });
+
+    socket.on("unit_occupancy_changed", () => {
+      fetchLeaseOverview();
+      fetchProperties();
       fetchRecentActivity();
     });
 
@@ -393,15 +423,12 @@ function LandlordDashboard() {
       refreshDashboard();
     });
 
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected");
-    });
-
     return () => {
       socket.disconnect();
     };
   }, [
     token,
+    currentUser,
     fetchProperties,
     fetchLandlordTenants,
     fetchPaymentOverview,
@@ -411,22 +438,39 @@ function LandlordDashboard() {
     refreshDashboard,
   ]);
 
-  // -------------------------------
-  // Derived Stats
-  // -------------------------------
   const totalProperties = properties.length;
 
   const approvedProperties = properties.filter(
-    (p) => p.approval_status === "approved" || p.status === "approved"
+    (p) =>
+      String(p.approval_status || "").toLowerCase() === "approved" ||
+      String(p.status || "").toLowerCase() === "approved"
   ).length;
 
   const pendingProperties = properties.filter(
-    (p) => p.approval_status === "pending" || p.status === "pending"
+    (p) =>
+      String(p.approval_status || "").toLowerCase() === "pending" ||
+      String(p.status || "").toLowerCase() === "pending"
   ).length;
 
   const cancelledProperties = properties.filter(
-    (p) => p.status === "cancelled" || p.status === "rejected"
+    (p) =>
+      String(p.status || "").toLowerCase() === "cancelled" ||
+      String(p.status || "").toLowerCase() === "rejected"
   ).length;
+
+  const collectionHealth =
+    paymentOverview.collectionRate >= 85
+      ? "Excellent"
+      : paymentOverview.collectionRate >= 65
+      ? "Healthy"
+      : "Needs Attention";
+
+  const occupancyHealth =
+    leaseOverview.occupancyRate >= 90
+      ? "High Utilization"
+      : leaseOverview.occupancyRate >= 70
+      ? "Stable"
+      : "Growth Opportunity";
 
   const statsCards = [
     {
@@ -436,7 +480,6 @@ function LandlordDashboard() {
       icon: Users,
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
-      bg: "bg-white",
       trend: tenantStats.approvedCount > 0 ? "up" : "neutral",
       trendText: `${tenantStats.rejectedCount} Rejected`,
     },
@@ -447,7 +490,6 @@ function LandlordDashboard() {
       icon: Building2,
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
-      bg: "bg-white",
       trend: "up",
       trendText: `${pendingProperties} Pending review`,
     },
@@ -455,12 +497,10 @@ function LandlordDashboard() {
       title: "Monthly Revenue",
       value: paymentOverview.monthlyRevenue,
       prefix: "KES ",
-      isCurrency: true,
       sub: `Collection rate ${paymentOverview.collectionRate}%`,
       icon: Wallet2,
       iconBg: "bg-emerald-100",
       iconColor: "text-emerald-600",
-      bg: "bg-white",
       trend: paymentOverview.revenueTrend >= 0 ? "up" : "down",
       trendText: `${Math.abs(paymentOverview.revenueTrend)}% vs last month`,
     },
@@ -468,12 +508,10 @@ function LandlordDashboard() {
       title: "Pending Payments",
       value: paymentOverview.pendingPayments,
       prefix: "KES ",
-      isCurrency: true,
       sub: `Outstanding tenant balances`,
       icon: Clock,
       iconBg: "bg-yellow-100",
       iconColor: "text-yellow-600",
-      bg: "bg-white",
       trend: paymentOverview.pendingTrend <= 0 ? "up" : "down",
       trendText: `${Math.abs(paymentOverview.pendingTrend)}% vs last month`,
     },
@@ -481,12 +519,10 @@ function LandlordDashboard() {
       title: "Overdue Rent",
       value: paymentOverview.overdueRent,
       prefix: "KES ",
-      isCurrency: true,
       sub: `Requires immediate follow-up`,
       icon: AlertTriangle,
       iconBg: "bg-red-100",
       iconColor: "text-red-600",
-      bg: "bg-white",
       trend: paymentOverview.overdueTrend <= 0 ? "up" : "down",
       trendText: `${Math.abs(paymentOverview.overdueTrend)}% vs last month`,
     },
@@ -498,7 +534,6 @@ function LandlordDashboard() {
       icon: Home,
       iconBg: "bg-orange-100",
       iconColor: "text-orange-600",
-      bg: "bg-white",
       trend: leaseOverview.occupancyTrend >= 0 ? "up" : "down",
       trendText: `${Math.abs(leaseOverview.occupancyTrend)}% vs last month`,
     },
@@ -509,7 +544,6 @@ function LandlordDashboard() {
       icon: FileText,
       iconBg: "bg-indigo-100",
       iconColor: "text-indigo-600",
-      bg: "bg-white",
       trend: leaseOverview.leaseTrend >= 0 ? "up" : "down",
       trendText: `${Math.abs(leaseOverview.leaseTrend)}% vs last month`,
     },
@@ -520,9 +554,8 @@ function LandlordDashboard() {
       icon: Bell,
       iconBg: "bg-pink-100",
       iconColor: "text-pink-600",
-      bg: "bg-white",
       trend: "up",
-      trendText: `Realtime enabled`,
+      trendText: socketConnected ? `Realtime enabled` : `Reconnecting...`,
     },
   ];
 
@@ -532,9 +565,6 @@ function LandlordDashboard() {
     { name: "Cancelled", value: cancelledProperties },
   ];
 
-  // -------------------------------
-  // Components
-  // -------------------------------
   const StatCard = ({
     title,
     value,
@@ -602,47 +632,63 @@ function LandlordDashboard() {
   );
 
   const ActivityBadge = ({ type }) => {
-    const base = "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold";
+    const base =
+      "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold";
 
     if (type === "payment") {
-      return <span className={`${base} bg-green-100 text-green-700`}>Payment</span>;
+      return (
+        <span className={`${base} bg-green-100 text-green-700`}>Payment</span>
+      );
     }
     if (type === "property") {
-      return <span className={`${base} bg-blue-100 text-blue-700`}>Property</span>;
+      return (
+        <span className={`${base} bg-blue-100 text-blue-700`}>Property</span>
+      );
     }
     if (type === "tenant") {
-      return <span className={`${base} bg-purple-100 text-purple-700`}>Tenant</span>;
+      return (
+        <span className={`${base} bg-purple-100 text-purple-700`}>Tenant</span>
+      );
     }
     if (type === "lease") {
-      return <span className={`${base} bg-orange-100 text-orange-700`}>Lease</span>;
+      return (
+        <span className={`${base} bg-orange-100 text-orange-700`}>Lease</span>
+      );
     }
     return <span className={`${base} bg-gray-100 text-gray-700`}>General</span>;
   };
 
-  // -------------------------------
-  // UI
-  // -------------------------------
   return (
     <section className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <div className="px-4 pb-8 pt-20 md:px-6">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-              <Activity size={16} />
-              Live Dashboard
+            <div className="inline-flex flex-wrap items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+              <LayoutDashboard size={16} />
+              Landlord Command Center
+              <span
+                className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  socketConnected
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {socketConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+                {socketConnected ? "Live" : "Offline"}
+              </span>
             </div>
 
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
               Dashboard Overview
             </h1>
-            <p className="mt-2 text-gray-600">
-              Welcome back! Monitor properties, tenants, revenue, occupancy and
-              recent activity in real time.
+            <p className="mt-2 max-w-3xl text-gray-600">
+              Monitor properties, approved tenants, unit occupancy, revenue,
+              payment health and real-time portfolio activity.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
               <p className="text-xs text-gray-500">Last Updated</p>
               <p className="text-sm font-semibold text-gray-800">
@@ -650,16 +696,18 @@ function LandlordDashboard() {
               </p>
             </div>
 
-            <button
-              onClick={() => refreshDashboard(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition hover:bg-blue-700"
-            >
-              <RefreshCw
-                size={18}
-                className={refreshing ? "animate-spin" : ""}
-              />
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
+            <div>
+              <button
+                onClick={() => refreshDashboard(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition hover:bg-blue-700"
+              >
+                <RefreshCw
+                  size={18}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -681,16 +729,14 @@ function LandlordDashboard() {
           </div>
         )}
 
-        {/* Top Summary Strip */}
-        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* SaaS Hero Strip */}
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white shadow-lg">
             <p className="text-sm text-blue-100">Portfolio Health</p>
             <h3 className="mt-2 text-2xl font-bold">
               {leaseOverview.occupancyRate}% Occupied
             </h3>
-            <p className="mt-2 text-sm text-blue-100">
-              {totalProperties} properties actively tracked
-            </p>
+            <p className="mt-2 text-sm text-blue-100">{occupancyHealth}</p>
           </div>
 
           <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 p-5 text-white shadow-lg">
@@ -698,9 +744,7 @@ function LandlordDashboard() {
             <h3 className="mt-2 text-2xl font-bold">
               {formatKES(paymentOverview.monthlyRevenue)}
             </h3>
-            <p className="mt-2 text-sm text-emerald-100">
-              Current month collections
-            </p>
+            <p className="mt-2 text-sm text-emerald-100">{collectionHealth}</p>
           </div>
 
           <div className="rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-white shadow-lg">
@@ -710,6 +754,16 @@ function LandlordDashboard() {
             </h3>
             <p className="mt-2 text-sm text-amber-100">
               Alerts + expiring leases
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-gradient-to-r from-slate-800 to-slate-900 p-5 text-white shadow-lg">
+            <p className="text-sm text-slate-300">Units Snapshot</p>
+            <h3 className="mt-2 text-2xl font-bold">
+              {leaseOverview.occupiedUnits}/{leaseOverview.totalUnits}
+            </h3>
+            <p className="mt-2 text-sm text-slate-300">
+              Occupied vs total units
             </p>
           </div>
         </div>
@@ -809,7 +863,7 @@ function LandlordDashboard() {
                   Occupancy Breakdown
                 </h3>
                 <p className="text-sm text-gray-500">
-                  Units occupied across your properties
+                  Unit-based occupancy across your properties
                 </p>
               </div>
               <div className="rounded-xl bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700">
@@ -851,7 +905,7 @@ function LandlordDashboard() {
               />
               <QuickActionCard
                 title="Register Tenant"
-                desc="Onboard a new tenant to your property"
+                desc="Onboard a new tenant to a selected unit"
                 icon={UserPlus2}
                 color="bg-emerald-600"
               />
@@ -867,6 +921,56 @@ function LandlordDashboard() {
                 icon={Bell}
                 color="bg-amber-500"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* SaaS Intelligence Strip */}
+        <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-violet-100 p-3">
+                <Sparkles className="text-violet-600" size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Portfolio Insight</h3>
+                <p className="text-sm text-gray-500">
+                  {leaseOverview.vacantUnits > 0
+                    ? `${leaseOverview.vacantUnits} units are ready for tenant acquisition`
+                    : "All units are currently assigned"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-emerald-100 p-3">
+                <BarChart3 className="text-emerald-600" size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Collection Signal</h3>
+                <p className="text-sm text-gray-500">
+                  {paymentOverview.collectionRate >= 85
+                    ? "Rent collection is performing strongly"
+                    : "Collections can improve with payment reminders"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-amber-100 p-3">
+                <AlertTriangle className="text-amber-600" size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Priority Queue</h3>
+                <p className="text-sm text-gray-500">
+                  {tenantStats.pendingCount} tenant approvals and{" "}
+                  {leaseOverview.expiringSoon} expiring leases need review
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -889,33 +993,35 @@ function LandlordDashboard() {
 
             <div className="space-y-4">
               {paymentOverview.recentTransactions.length > 0 ? (
-                paymentOverview.recentTransactions.slice(0, 6).map((txn, index) => (
-                  <div
-                    key={txn.id || index}
-                    className="flex items-start justify-between rounded-xl border border-gray-100 bg-gray-50 p-4"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-800">
-                        {txn.tenant_name || "Tenant Payment"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {txn.property_name || "Property"} •{" "}
-                        {txn.payment_method || "Method"}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-400">
-                        {formatDateTime(txn.created_at)}
-                      </p>
+                paymentOverview.recentTransactions
+                  .slice(0, 6)
+                  .map((txn, index) => (
+                    <div
+                      key={txn.id || index}
+                      className="flex items-start justify-between rounded-xl border border-gray-100 bg-gray-50 p-4"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-800">
+                          {txn.tenant_name || "Tenant Payment"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {txn.property_name || "Property"} •{" "}
+                          {txn.payment_method || "Method"}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          {formatDateTime(txn.created_at)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">
+                          {formatKES(txn.amount)}
+                        </p>
+                        <span className="mt-1 inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">
+                          Paid
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">
-                        {formatKES(txn.amount)}
-                      </p>
-                      <span className="mt-1 inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">
-                        Paid
-                      </span>
-                    </div>
-                  </div>
-                ))
+                  ))
               ) : (
                 <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-500">
                   No recent transactions yet
@@ -1058,7 +1164,6 @@ function LandlordDashboard() {
           </div>
         </div>
 
-        {/* Error / Loading Hints */}
         {propertyError && (
           <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
             {propertyError}

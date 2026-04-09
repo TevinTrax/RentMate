@@ -2,6 +2,7 @@ import pool from "../config/db.js";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { syncPropertyOccupancy } from "../utils/propertyOccupancy.js";
 
 dotenv.config();
 
@@ -1475,37 +1476,157 @@ export const getApprovedTenant = async (req, res) => {
 // delete user
 export const deleteUser = async (req, res) => {
   const { id } = req.params;
+  const client = await pool.connect();
 
   try {
     if (!id) {
       return res.status(400).json({ error: "User ID is required" });
     }
 
-    // Check if user exists
-    const userCheck = await pool.query(
-      "SELECT id, role FROM users WHERE id = $1",
+    await client.query("BEGIN");
+
+    const userCheck = await client.query(
+      `
+      SELECT id, role, property_id, unit_id, landlord_id, tenant_approval_status
+      FROM users
+      WHERE id = $1
+      `,
       [id]
     );
 
     if (userCheck.rows.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({ error: "User not found" });
     }
 
-    // OPTIONAL: prevent deleting admin accounts
-    // if (userCheck.rows[0].role?.toLowerCase() === "admin") {
-    //   return res.status(403).json({ error: "Admin users cannot be deleted" });
-    // }
+    const user = userCheck.rows[0];
 
-    // Delete related OTP records first
-    await pool.query("DELETE FROM otp_verifications WHERE user_id = $1", [id]);
+    // If deleting approved tenant, free the unit
+    if (
+      String(user.role).toLowerCase() === "tenant" &&
+      user.unit_id &&
+      String(user.tenant_approval_status || "").toLowerCase() === "approved"
+    ) {
+      await client.query(
+        `UPDATE units SET is_occupied = false WHERE id = $1`,
+        [user.unit_id]
+      );
 
-    // Delete user
-    await pool.query("DELETE FROM users WHERE id = $1", [id]);
+      if (user.property_id) {
+        await syncPropertyOccupancy(client, user.property_id);
+      }
+    }
+
+    await client.query("DELETE FROM otp_verifications WHERE user_id = $1", [id]);
+    await client.query("DELETE FROM users WHERE id = $1", [id]);
+
+    await client.query("COMMIT");
+
+    const io = req.app.get("io");
+    if (io && user.landlord_id) {
+      io.to(`landlord_${user.landlord_id}`).emit("tenant_updated");
+      io.to(`landlord_${user.landlord_id}`).emit("dashboard_refresh", {
+        source: "tenant_deleted",
+      });
+    }
 
     return res.status(200).json({ message: "User deleted successfully" });
-
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Delete user error:", error);
     return res.status(500).json({ error: "Internal server error" });
+  } finally {
+    client.release();
+  }
+};
+
+// LANDLORD DASHBOARD - OCCUPANCY OVERVIEW + PROPERTY BREAKDOWN
+export const getLandlordOccupancyOverview = async (req, res) => {
+  try {
+    const landlordId = req.user.id;
+
+    const summaryResult = await pool.query(
+      `
+      SELECT
+        COUNT(u.id)::int AS total_units,
+        COUNT(u.id) FILTER (WHERE u.is_occupied = true)::int AS occupied_units,
+        COUNT(u.id) FILTER (WHERE COALESCE(u.is_occupied, false) = false)::int AS vacant_units
+      FROM units u
+      INNER JOIN properties p ON u.property_id = p.id
+      WHERE p.landlord_id = $1
+      `,
+      [landlordId]
+    );
+
+    const row = summaryResult.rows[0] || {};
+    const totalUnits = Number(row.total_units || 0);
+    const occupiedUnits = Number(row.occupied_units || 0);
+    const vacantUnits = Number(row.vacant_units || 0);
+
+    const occupancyRate =
+      totalUnits > 0
+        ? Number(((occupiedUnits / totalUnits) * 100).toFixed(1))
+        : 0;
+
+    const propertyBreakdown = await pool.query(
+      `
+      SELECT
+        p.id,
+        p.apartment_name AS property,
+        COUNT(u.id)::int AS total_units,
+        COUNT(u.id) FILTER (WHERE u.is_occupied = true)::int AS occupied,
+        COUNT(u.id) FILTER (WHERE COALESCE(u.is_occupied, false) = false)::int AS vacant
+      FROM properties p
+      LEFT JOIN units u ON u.property_id = p.id
+      WHERE p.landlord_id = $1
+      GROUP BY p.id, p.apartment_name
+      ORDER BY p.created_at DESC
+      `,
+      [landlordId]
+    );
+
+    const expiringSoonResult = await pool.query(
+      `
+      SELECT COUNT(*)::int AS expiring_soon
+      FROM leases l
+      INNER JOIN properties p ON l.property_id = p.id
+      WHERE p.landlord_id = $1
+        AND l.status = 'active'
+        AND l.move_out_date IS NOT NULL
+        AND l.move_out_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days'
+      `,
+      [landlordId]
+    );
+
+    const activeLeasesResult = await pool.query(
+      `
+      SELECT COUNT(*)::int AS active_leases
+      FROM leases l
+      INNER JOIN properties p ON l.property_id = p.id
+      WHERE p.landlord_id = $1
+        AND l.status = 'active'
+        AND (l.move_out_date IS NULL OR l.move_out_date >= CURRENT_DATE)
+      `,
+      [landlordId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      occupancyRate,
+      activeLeases: Number(activeLeasesResult.rows[0]?.active_leases || 0),
+      vacantUnits,
+      occupiedUnits,
+      totalUnits,
+      expiringSoon: Number(expiringSoonResult.rows[0]?.expiring_soon || 0),
+      leaseTrend: 0,
+      occupancyTrend: 0,
+      propertyOccupancyBreakdown: propertyBreakdown.rows || [],
+    });
+  } catch (error) {
+    console.error("Occupancy overview error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch occupancy overview",
+    });
   }
 };

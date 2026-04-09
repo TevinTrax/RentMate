@@ -11,10 +11,10 @@ import {
   X,
   Mail,
   Phone,
-  BadgeCheck,
   Home,
-  MapPin,
   CreditCard,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 function LandlordUsers() {
@@ -29,10 +29,34 @@ function LandlordUsers() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [selectedTenant, setSelectedTenant] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const token = sessionStorage.getItem("token");
 
+  // -------------------------
+  // Helper: recalculate stats
+  // -------------------------
+  const recalculateStats = (tenantList) => {
+    const totalTenants = tenantList.filter((u) => u.role === "Tenant").length;
+    const unitsOccupied = tenantList.filter(
+      (u) => u.tenant_approval_status === "approved"
+    ).length;
+    const pendingApproval = tenantList.filter(
+      (u) => u.tenant_approval_status === "pending"
+    ).length;
+
+    setStats({
+      totalUsers: tenantList.length,
+      totalTenants,
+      unitsOccupied,
+      pendingApproval,
+    });
+  };
+
+  // ---------------------------------------
   // Fetch tenants belonging to this landlord
+  // ---------------------------------------
   const fetchTenants = async () => {
     setLoading(true);
     try {
@@ -52,23 +76,8 @@ function LandlordUsers() {
       }
 
       const tenantList = data.tenants || [];
-
       setTenants(tenantList);
-
-      const totalTenants = tenantList.filter((u) => u.role === "Tenant").length;
-      const unitsOccupied = tenantList.filter(
-        (u) => u.tenant_approval_status === "approved"
-      ).length;
-      const pendingApproval = tenantList.filter(
-        (u) => u.tenant_approval_status === "pending"
-      ).length;
-
-      setStats({
-        totalUsers: tenantList.length,
-        totalTenants,
-        unitsOccupied,
-        pendingApproval,
-      });
+      recalculateStats(tenantList);
     } catch (err) {
       console.error("Fetch tenants error:", err);
       setTenants([]);
@@ -78,6 +87,7 @@ function LandlordUsers() {
         unitsOccupied: 0,
         pendingApproval: 0,
       });
+      alert(err.message || "Failed to fetch tenants");
     } finally {
       setLoading(false);
     }
@@ -87,7 +97,9 @@ function LandlordUsers() {
     fetchTenants();
   }, []);
 
-  // Approve/Reject tenant
+  // -------------------------
+  // Approve / Reject Tenant
+  // -------------------------
   const handleTenantStatus = async (tenantId, status) => {
     try {
       setActionLoading(tenantId);
@@ -117,21 +129,7 @@ function LandlordUsers() {
       );
 
       setTenants(updatedList);
-
-      const totalTenants = updatedList.filter((u) => u.role === "Tenant").length;
-      const unitsOccupied = updatedList.filter(
-        (u) => u.tenant_approval_status === "approved"
-      ).length;
-      const pendingApproval = updatedList.filter(
-        (u) => u.tenant_approval_status === "pending"
-      ).length;
-
-      setStats({
-        totalUsers: updatedList.length,
-        totalTenants,
-        unitsOccupied,
-        pendingApproval,
-      });
+      recalculateStats(updatedList);
 
       // Update modal data too if open
       if (selectedTenant && selectedTenant.id === tenantId) {
@@ -147,12 +145,59 @@ function LandlordUsers() {
     }
   };
 
+  // -------------------------
+  // Delete Tenant
+  // -------------------------
+  const handleDeleteTenant = async () => {
+    if (!selectedTenant?.id) return;
+
+    try {
+      setDeleteLoading(true);
+
+      const res = await fetch(
+        `http://localhost:5000/api/users/tenant/${selectedTenant.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete tenant");
+      }
+
+      const updatedList = tenants.filter((t) => t.id !== selectedTenant.id);
+      setTenants(updatedList);
+      recalculateStats(updatedList);
+
+      setDeleteModalOpen(false);
+      setSelectedTenant(null);
+
+      alert(data.message || "Tenant deleted successfully");
+    } catch (err) {
+      console.error("Delete tenant error:", err);
+      alert(err.message || "Failed to delete tenant");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // -------------------------
+  // Filter tenants
+  // -------------------------
   const filteredTenants = tenants.filter((t) =>
     `${t.first_name || ""} ${t.last_name || ""} ${t.email || ""} ${t.apartment_name || ""} ${t.unit_house_number || ""}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
 
+  // -------------------------
+  // Badge styles
+  // -------------------------
   const getStatusBadge = (status) => {
     if (status === "approved") {
       return "text-green-700 bg-green-100";
@@ -186,10 +231,10 @@ function LandlordUsers() {
             <p className="text-gray-600 py-1">Manage Your Tenants</p>
           </div>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg hover:bg-gray-200">
+            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg hover:bg-gray-200 transition">
               <DownloadCloud size={18} /> Export
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg hover:bg-green-600">
+            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg hover:bg-green-600 transition">
               <UserPlus2 size={18} /> Add User
             </button>
           </div>
@@ -244,7 +289,7 @@ function LandlordUsers() {
                   <th className="p-3 text-left">Apartment</th>
                   <th className="p-3 text-left">House No</th>
                   <th className="p-3 text-left">Verified</th>
-                  <th className="p-3 text-left">Status</th>
+                  <th className="p-3 text-left">Approval Status</th>
                   <th className="p-3 text-center">Actions</th>
                 </tr>
               </thead>
@@ -361,6 +406,7 @@ function LandlordUsers() {
                 label="House Number"
                 value={selectedTenant.unit_house_number || "N/A"}
               />
+
               <div className="md:col-span-2 flex flex-wrap gap-3 pt-2">
                 <span
                   className={`px-4 py-2 rounded-full text-sm font-medium ${getVerifiedBadge(
@@ -380,10 +426,18 @@ function LandlordUsers() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-gray-50">
+            <div className="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t bg-gray-50">
+              <button
+                onClick={() => setDeleteModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+              >
+                <Trash2 size={18} />
+                Delete User
+              </button>
+
               <button
                 onClick={() => setSelectedTenant(null)}
-                className="px-4 py-2 rounded-lg border hover:bg-gray-100"
+                className="px-4 py-2 rounded-lg border hover:bg-gray-100 transition"
               >
                 Close
               </button>
@@ -395,9 +449,11 @@ function LandlordUsers() {
                       handleTenantStatus(selectedTenant.id, "rejected")
                     }
                     disabled={actionLoading === selectedTenant.id}
-                    className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition"
                   >
-                    {actionLoading === selectedTenant.id ? "Processing..." : "Reject"}
+                    {actionLoading === selectedTenant.id
+                      ? "Processing..."
+                      : "Reject"}
                   </button>
 
                   <button
@@ -405,12 +461,58 @@ function LandlordUsers() {
                       handleTenantStatus(selectedTenant.id, "approved")
                     }
                     disabled={actionLoading === selectedTenant.id}
-                    className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 transition"
                   >
-                    {actionLoading === selectedTenant.id ? "Processing..." : "Approve"}
+                    {actionLoading === selectedTenant.id
+                      ? "Processing..."
+                      : "Approve"}
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && selectedTenant && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle size={30} className="text-red-600" />
+              </div>
+
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                Delete Tenant?
+              </h3>
+
+              <p className="text-gray-600 leading-relaxed">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-gray-800">
+                  {selectedTenant.first_name} {selectedTenant.last_name}
+                </span>
+                ? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-gray-50">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-50 transition"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleDeleteTenant}
+                disabled={deleteLoading}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition"
+              >
+                <Trash2 size={18} />
+                {deleteLoading ? "Deleting..." : "Yes, Delete"}
+              </button>
             </div>
           </div>
         </div>

@@ -33,7 +33,7 @@ function Cards() {
         )}
 
         {!loading && properties.length === 0 && (
-          <p className="col-span-full text-center text-gray-500 text-lg font-medium">No Posted Properties</p>
+          <p className="col-span-full text-center text-red-500 text-lg font-bold">No Posted Properties</p>
         )}
 
         {properties.map((property, index) => (

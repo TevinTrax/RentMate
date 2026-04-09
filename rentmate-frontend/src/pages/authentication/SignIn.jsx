@@ -317,7 +317,7 @@ function SignIn() {
         {/* RIGHT SIDE FORM */}
         <div className="relative flex flex-col justify-center px-6 sm:px-10 md:px-14 py-10">
           <div className="mb-8 mt-8 lg:mt-0">
-            <h2 className="text-2xl font-extrabold text-green-700 tracking-tight">
+            <h2 className="text-2xl font-bold text-green-700 tracking-tight">
               RentMate
             </h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -363,7 +363,7 @@ function SignIn() {
                     id="role"
                     value={formData.role}
                     onChange={handleChange}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                    className="w-full text-sm border border-gray-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                     required
                   >
                     <option value="">Select role</option>

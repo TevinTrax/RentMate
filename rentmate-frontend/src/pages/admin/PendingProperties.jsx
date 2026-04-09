@@ -128,7 +128,7 @@ function AdminPendingProperties() {
       )}
 
       {/* GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 h-[90vh] overflow-y-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 overflow-y-auto">
         {properties.map((property) => (
           <div key={property.id} className="border rounded-lg p-3 shadow bg-white">
 

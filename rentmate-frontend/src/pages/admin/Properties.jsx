@@ -428,62 +428,69 @@ const handleEditChange = (e) => {
         }));
     };
 
-         // Handle form submit
-        const handlePostPropertySubmit = async (e) => {
-            e.preventDefault();
+    // Handle form submit
+    const handlePostPropertySubmit = async (e) => {
+        e.preventDefault();
 
-            try {
-                const formData = new FormData();
-                const submitData = { ...postFormData };
+        if (postingProperty) return; // prevent double submit
 
-                // update lat/lng from live location
-                if (location) {
-                    submitData.latitude = location.latitude;
-                    submitData.longitude = location.longitude;
-                }
+        try {
+            setPostingProperty(true);
+            setErrorMessage("");
+            setSuccessMessage("");
 
-                Object.keys(submitData).forEach((key) => {
+            const formData = new FormData();
+            const submitData = { ...postFormData };
+
+            // update lat/lng from live location
+            if (location) {
+                submitData.latitude = location.latitude;
+                submitData.longitude = location.longitude;
+            }
+
+            Object.keys(submitData).forEach((key) => {
                 let value = submitData[key];
+
                 if (value !== null && value !== undefined) {
                     if (typeof value === "boolean") value = value ? "1" : "0";
                     formData.append(key, value);
                 }
-                });
+            });
 
-                const token= sessionStorage.getItem("token");
+            const token = sessionStorage.getItem("token");
+            if (!token) throw new Error("No token found. Please log in again.");
 
-                const response = await fetch("http://localhost:5000/api/properties/post-property", {
+            const response = await fetch("http://localhost:5000/api/properties/post-property", {
                 method: "POST",
                 body: formData,
                 headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-                });
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-                // Safely parse JSON
-                let data;
-                try {
+            // Safely parse JSON
+            let data;
+            try {
                 data = await response.json();
-                } catch (err) {
+            } catch (err) {
                 throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
-                }
+            }
 
-                if (!response.ok) {
+            if (!response.ok) {
                 throw new Error(data.error || "Failed to post property");
-                }
+            }
 
-                console.log("Property posted successfully:", data);
+            console.log("Property posted successfully:", data);
 
-                // Close modal and reset only necessary fields
-                setOpenPostPropertyModal(false);
+            // Close modal first
+            setOpenPostPropertyModal(false);
 
-                // Reset the fields you want to clear while keeping FormData reference
-                setPostFormData((prev) => ({
-                ...prev,
+            // Reset form
+            setPostFormData({
                 apartment_name: "",
                 property_type: "",
                 property_status: "",
-                vacant_units:"",
+                vacant_units: "",
                 description: "",
                 manager_first_name: "",
                 manager_last_name: "",
@@ -515,13 +522,53 @@ const handleEditChange = (e) => {
                 rent_due_day: 1,
                 rent_due_type: "ON_OR_BEFORE",
                 rent_cycle: "MONTHLY",
-                }));
+            });
 
-            } catch (error) {
-                console.error("Error posting property:", error);
-                alert(error.message);
-            }
-        };
+            // Refresh posted properties automatically
+            await fetchPostedProperties();
+
+            // Show success alert
+            setSuccessMessage("Property posted successfully!");
+
+            // Optional browser alert too:
+            alert("Property posted successfully!");
+
+            // Auto-hide success message after 3 sec
+            setTimeout(() => {
+                setSuccessMessage("");
+            }, 3000);
+
+        } catch (error) {
+            console.error("Error posting property:", error);
+            setErrorMessage(error.message);
+            alert(error.message);
+        } finally {
+            setPostingProperty(false);
+        }
+    };
+
+      // State to hold the counts
+  const [stats, setStats] = useState({
+    total: 0,
+    posted: 0,
+    pendingApproval: 0,
+    cancelled: 0,
+  });
+
+  // Function to calculate stats
+  const calculateStats = () => {
+    const total = properties.length;
+    const posted = properties.filter(p => p.status === "posted").length;
+    const pendingApproval = properties.filter(p => p.approval_status === "pending").length;
+    const cancelled = properties.filter(p => p.approval_status === "cancelled").length;
+
+    setStats({ total, posted, pendingApproval, cancelled });
+  };
+
+  // Recalculate stats whenever properties change
+  useEffect(() => {
+    calculateStats();
+  }, [properties]);
 
   return (
     <section className="w-full p-4">
@@ -555,61 +602,63 @@ const handleEditChange = (e) => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats card */}
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* Total Properties */}
+            <div className="flex items-center rounded-lg bg-blue-50 hover:border border-blue-200 p-4 shadow-md hover:scale-105">
+                <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-blue-200">
+                <Building2 className="text-blue-500" size={30} />
+                </div>
 
-          <div className="flex items-center rounded-lg bg-blue-50 hover:border border-blue-200 p-4 shadow-md hover:scale-105">
-            <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-blue-200">
-              <Building2 className="text-blue-500" size={30} />
+                <div>
+                <p className="text-gray-600">Total Properties</p>
+                <h2 className="text-2xl font-bold">
+                    <CountUp end={stats.total} duration={2} />
+                </h2>
+                </div>
             </div>
 
-            <div>
-              <p className="text-gray-600">Total Properties</p>
-              <h2 className="text-2xl font-bold">
-                <CountUp end={properties.length} duration={2} />
-              </h2>
-            </div>
-          </div>
+            {/* Posted Properties */}
+            <div className="flex items-center rounded-lg bg-gray-50 hover:border border-gray-200 p-4 shadow-md hover:scale-105">
+                <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-gray-300">
+                <Verified className="text-gray-800" size={30} />
+                </div>
 
-          <div className="flex items-center rounded-lg bg-gray-50 hover:border border-gray-200 p-4 shadow-md hover:scale-105">
-            <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-gray-300">
-              <Verified className="text-gray-800" size={30} />
-            </div>
-
-            <div>
-              <p className="text-gray-600">Approved</p>
-              <h2 className="text-2xl font-bold">
-                <CountUp end={200} duration={2} />
-              </h2>
-            </div>
-          </div>
-
-          <div className="flex items-center rounded-lg bg-green-50 hover:border border-green-200 p-4 shadow-md hover:scale-105">
-            <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-green-200">
-              <Verified className="text-green-500" size={30} />
+                <div>
+                <p className="text-gray-600">Posted Properties</p>
+                <h2 className="text-2xl font-bold">
+                    <CountUp end={stats.posted} duration={2} />
+                </h2>
+                </div>
             </div>
 
-            <div>
-              <p className="text-gray-600">Pending Approval</p>
-              <h2 className="text-2xl font-bold">
-                <CountUp end={50} duration={2} />
-              </h2>
-            </div>
-          </div>
+            {/* Pending Approval */}
+            <div className="flex items-center rounded-lg bg-green-50 hover:border border-green-200 p-4 shadow-md hover:scale-105">
+                <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-green-200">
+                <Verified className="text-green-500" size={30} />
+                </div>
 
-          <div className="flex items-center rounded-lg bg-red-50 hover:border border-red-200 p-4 shadow-md hover:scale-105">
-            <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-red-200">
-              <Clock className="text-red-500" size={30} />
+                <div>
+                <p className="text-gray-600">Pending Approval</p>
+                <h2 className="text-2xl font-bold">
+                    <CountUp end={stats.pendingApproval} duration={2} />
+                </h2>
+                </div>
             </div>
 
-            <div>
-              <p className="text-gray-600">Cancelled</p>
-              <h2 className="text-2xl font-bold">
-                <CountUp end={300} duration={2} />
-              </h2>
-            </div>
-          </div>
+            {/* Cancelled */}
+            <div className="flex items-center rounded-lg bg-red-50 hover:border border-red-200 p-4 shadow-md hover:scale-105">
+                <div className="mr-3 flex h-14 w-14 items-center justify-center rounded-lg bg-red-200">
+                <Clock className="text-red-500" size={30} />
+                </div>
 
+                <div>
+                <p className="text-gray-600">Cancelled</p>
+                <h2 className="text-2xl font-bold">
+                    <CountUp end={stats.cancelled} duration={2} />
+                </h2>
+                </div>
+            </div>
         </div>
 
         {/* Search */}
@@ -1589,7 +1638,8 @@ const handleEditChange = (e) => {
                                                         type="number"
                                                         id="vacant_units"
                                                         value={postFormData.vacant_units}
-                                                        onChange={handleChange}
+                                                        onChange={handleInputChange}
+                                                        name="vacant_units"
                                                         placeholder="Number of vacant units"
                                                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                                     />

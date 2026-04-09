@@ -140,7 +140,7 @@ function FreeTrial() {
             Start Your Free Trial Today
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight pt-2 md:pt-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight pt-2 md:pt-6">
             Take Control of <span className="text-green-600">Your Rentals</span> Today
           </h1>
 

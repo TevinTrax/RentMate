@@ -46,8 +46,10 @@ import AdminPaymentsReports from "./pages/admin/PaymentReports.jsx";
 import AdminPaymentsTransactions from "./pages/admin/Transactions.jsx";
 import AdminPackageSubscriptions from "./pages/admin/Subscriptions.jsx";
 import AdminPaymentsFeesDiscounts from "./pages/admin/FeesDiscounts.jsx";
+import AdminNotifications from "./pages/admin/AdminNotifications.jsx";
 // import AdminReports from "./pages/admin/Reports.jsx";
-// import AdminSettings from "./pages/admin/Settings.jsx";
+import AdminSettings from "./pages/admin/Settings.jsx";
+import AdminPlans from "./pages/admin/AdminPlans.jsx";
 
 // /* =======================
 //    LANDLORD PAGES
@@ -60,7 +62,7 @@ import LandlordProperties from "./pages/landlord/Properties.jsx";
 // import LandlordMaintenance from "./pages/landlord/Maintenance.jsx";
 import LandlordPayments from "./pages/landlord/Payments.jsx";
 // import LandlordReports from "./pages/landlord/Reports.jsx";
-// import LandlordSettings from "./pages/landlord/Settings.jsx";   
+import LandlordSettings from "./pages/landlord/Settings.jsx";   
 
 // /* =======================
 //    TENANT PAGES
@@ -74,6 +76,7 @@ import TenantPayments from "./pages/tenant/Payments.jsx";
 import LeaseDocuments from "./pages/tenant/LeaseDocuments.jsx";
 import TenantNotifications from "./pages/tenant/Notifications.jsx";
 import TenantMessages from "./pages/tenant/Messages.jsx";
+import TenantSettings from "./pages/tenant/Settings.jsx";
 
 function App() {
   return (
@@ -120,6 +123,10 @@ function App() {
                 <Route path="/admin/payments/fees-discounts" element={<AdminPaymentsFeesDiscounts />} />
                 {/* <Route path="/admin/payments/audit-logs" element={<AdminPaymentsAuditLogs />} /> */}
               </Route>
+              <Route path="/admin/plans" element={<AdminPlans />} />
+              <Route path="/admin/notifications" element={<AdminNotifications />} />
+              {/* <Route path="/admin/reports" element={<AdminReports />} /> */}
+              <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
 
             {/* ========= LANDLORD ROUTES ========= */}
@@ -130,8 +137,8 @@ function App() {
               {/* <Route path="/landlord/tenants" element={<LandlordTenants />} /> */}
               {/* <Route path="/landlord/maintenance" element={<LandlordMaintenance />} /> */}
               <Route path="/landlord/payments" element={<LandlordPayments />} />
-              {/* <Route path="/landlord/reports" element={<LandlordReports />} />
-              <Route path="/landlord/settings" element={<LandlordSettings />} />  */}
+              {/* <Route path="/landlord/reports" element={<LandlordReports />} /> */}
+              <Route path="/landlord/settings" element={<LandlordSettings />} />
             </Route>
 
             {/* ========= TENANT ROUTES ========= */}
@@ -142,7 +149,7 @@ function App() {
               <Route path="/tenant/lease-documents" element={<LeaseDocuments/>}/>
               <Route path="/tenant/payments" element={<TenantPayments />} />
               <Route path="/tenant/messages" element={<TenantMessages/>}/>
-              {/* <Route path="/tenant/settings" element={<TenantSettings />} /> */}
+              <Route path="/tenant/settings" element={<TenantSettings />} />
               <Route path="/tenant/notifications" element={<TenantNotifications/>}/>
             </Route>
           </Routes>

@@ -345,7 +345,7 @@ function TenantRegistration() {
             <FaArrowLeft className="mr-2" /> Back
           </button>
 
-          <h2 className="text-2xl font-extrabold text-green-700 mb-2">
+          <h2 className="text-2xl font-bold text-green-700 mb-2">
             Tenant Registration
           </h2>
           <p className="text-gray-500 text-sm mb-6">
@@ -470,7 +470,7 @@ function TenantRegistration() {
                 value={formData.apartment_id}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full p-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="">-- Select Apartment --</option>
                 {apartments.map((apt) => (
@@ -490,7 +490,7 @@ function TenantRegistration() {
                 onChange={handleChange}
                 required
                 disabled={!formData.apartment_id || units.length === 0}
-                className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
+                className="w-full p-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
               >
                 <option value="">-- Select Unit --</option>
                 {units.map((unit) => (

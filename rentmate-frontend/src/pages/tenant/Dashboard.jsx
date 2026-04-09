@@ -107,7 +107,7 @@ function TenantDashboard() {
       {/* Alert Banner */}
       {tenant.tenant_approval_status !== "approved" && (
         <div
-          className={`p-3 rounded mb-4 ${
+          className={`p-3 rounded my-4 ${
             tenant.tenant_approval_status === "pending"
               ? "bg-yellow-100 text-yellow-800"
               : "bg-red-100 text-red-800"
@@ -269,7 +269,7 @@ function TenantDashboard() {
                   </div>  
                   <div>
                     <h4 className="text-sm text-gray-500 font-semibold">Landlord Name</h4>                  
-                    <p className="text-gray-700 font-semibold">{tenant.manager_name}</p>
+                    <p className="text-gray-700 font-semibold">{tenant.manager_first_name} {tenant.manager_last_name}</p>
                   </div>
                 </div>
                 {/* Amenities Section */}
