@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/scrolltotop.jsx";
+import Toaster from "react-hot-toast";
 
 
 /* Layouts */
@@ -49,7 +50,6 @@ import AdminPaymentsFeesDiscounts from "./pages/admin/FeesDiscounts.jsx";
 import AdminNotifications from "./pages/admin/AdminNotifications.jsx";
 // import AdminReports from "./pages/admin/Reports.jsx";
 import AdminSettings from "./pages/admin/Settings.jsx";
-import AdminPlans from "./pages/admin/AdminPlans.jsx";
 
 // /* =======================
 //    LANDLORD PAGES
@@ -81,6 +81,7 @@ import TenantSettings from "./pages/tenant/Settings.jsx";
 function App() {
   return (
     <>
+      {/* <Toaster position="top-right" /> */}
       <ScrollToTop />
 
           <Routes>
@@ -118,15 +119,14 @@ function App() {
               <Route path="/admin/properties" element={<AdminProperties />} />
               <Route path="/admin/payments" element={<AdminPayments />}>
                 <Route path="/admin/payments/transactions" element={<AdminPaymentsTransactions />} />
-                <Route path="/admin/payments/package-subscriptions" element={<AdminPackageSubscriptions />} /> 
                 <Route path="/admin/payments/payment-reports" element={<AdminPaymentsReports />} />
                 <Route path="/admin/payments/fees-discounts" element={<AdminPaymentsFeesDiscounts />} />
                 {/* <Route path="/admin/payments/audit-logs" element={<AdminPaymentsAuditLogs />} /> */}
               </Route>
-              <Route path="/admin/plans" element={<AdminPlans />} />
               <Route path="/admin/notifications" element={<AdminNotifications />} />
               {/* <Route path="/admin/reports" element={<AdminReports />} /> */}
               <Route path="/admin/settings" element={<AdminSettings />} />
+              <Route path="/admin/subscriptions" element={<AdminPackageSubscriptions />} />
             </Route>
 
             {/* ========= LANDLORD ROUTES ========= */}

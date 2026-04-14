@@ -52,16 +52,6 @@ function PaymentsNavbar() {
         </NavLink>
 
         <NavLink
-          to="/admin/payments/package-subscriptions"
-          ref={(el) => (linkRefs.current[1] = el)}
-          data-path="/admin/payments/package-subscriptions"
-          className={navLinkClass}
-        >
-          <User2 size={18} />
-          Subscriptions
-        </NavLink>
-
-        <NavLink
           to="/admin/payments/payment-reports"
           ref={(el) => (linkRefs.current[2] = el)}
           data-path="/admin/payments/payment-reports"

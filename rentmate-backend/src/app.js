@@ -9,7 +9,7 @@ import authRoutes from "./routes/auth.routes.js";
 import propertiesRoutes from "./routes/properties.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import messagesRoutes from "./routes/messages.routes.js";
-import plansRoutes from "./routes/plans.routes.js";
+import subscriptionRoutes from "./routes/subscription.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -109,7 +109,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertiesRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/messages", messagesRoutes);
-app.use("/api/plans", plansRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 /**
  * =========================================

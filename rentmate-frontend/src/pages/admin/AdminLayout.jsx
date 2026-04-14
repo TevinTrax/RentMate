@@ -6,7 +6,7 @@ import {
   CreditCard,
   FileText,
   Settings,
-  User,
+  User2,
   LogOut,
   Bell,
 } from "lucide-react";
@@ -93,14 +93,17 @@ function AdminLayout() {
             Properties
           </NavLink>
 
-          <NavLink to="/admin/plans" className={navLinkClass}>
-            <Building2 size={18} />
-            Plans
+          <NavLink
+            to="/admin/subscriptions"
+            className={navLinkClass}
+          >
+            <User2 size={18} />
+            Subscriptions & Plans
           </NavLink>
 
           <NavLink to="/admin/payments" className={navLinkClass}>
             <CreditCard size={18} />
-            Payments
+            Payments & Transactions
           </NavLink>
 
           <NavLink to="/admin/reports" className={navLinkClass}>
