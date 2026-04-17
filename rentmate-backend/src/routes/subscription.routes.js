@@ -1,20 +1,25 @@
-import { Router } from "express";
-import * as ctrl from "../controllers/subscription.controller.js";
-import { verifyToken, requireRole } from "../middlewares/auth.middleware.js";
+import express from "express";
+import {
+  getPlans, createPlan, updatePlan, deletePlan, togglePlan,
+  getSubscriptions, createSubscription, updateSubscriptionStatus,
+  getStats
+} from "../controllers/subscription.controller.js";
 
-const router = Router();
+const router = express.Router();
 
-// ── Plans (admin only) ───────────────────────────────────────────────────────
-router.get("/plans",                     verifyToken, requireRole("admin"), ctrl.getPlans);
-router.post("/plans",                    verifyToken, requireRole("admin"), ctrl.createPlan);
-router.put("/plans/:id",                 verifyToken, requireRole("admin"), ctrl.updatePlan);
-router.patch("/plans/:id/toggle", verifyToken, requireRole("admin"), ctrl.togglePlanStatus);
-router.delete("/plans/:id",              verifyToken, requireRole("admin"), ctrl.deletePlan);
+/* PLANS */
+router.get("/plans/all", getPlans);
+router.post("/plans", createPlan);
+router.put("/plans/:id", updatePlan);
+router.delete("/plans/:id", deletePlan);
+router.patch("/plans/:id/status", togglePlan);
 
-// ── Subscriptions ─────────────────────────────────────────────────────────────
-router.get("/subscriptions/stats",       verifyToken, requireRole("admin"), ctrl.getSubscriptionStats);
-router.get("/subscriptions",             verifyToken, requireRole("admin"), ctrl.getSubscriptions);
-router.post("/subscriptions",            verifyToken, requireRole("admin"), ctrl.createSubscription);
-router.post("/subscriptions/:id/expire", verifyToken, requireRole("admin"), ctrl.expireSubscription);
+/* SUBSCRIPTIONS */
+router.get("/subscriptions/all", getSubscriptions);
+router.post("/subscriptions", createSubscription);
+router.patch("/subscriptions/:id/status", updateSubscriptionStatus);
+
+/* STATS */
+router.get("/stats/subscriptions", getStats);
 
 export default router;

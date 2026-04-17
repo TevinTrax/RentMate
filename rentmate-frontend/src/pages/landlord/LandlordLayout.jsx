@@ -67,7 +67,7 @@ function LandlordLayout() {
 
                 <NavLink to="/landlord/payments" className={navLinkClass}>
                 <Wallet2 size={18} />
-                Payments
+                Payments & Subscription
                 </NavLink>
 
                 <NavLink to="/landlord/notification" className={navLinkClass}>
